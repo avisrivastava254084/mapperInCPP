@@ -3,6 +3,10 @@
 #include <vector>
 #include <fstream>
 
+#ifdef _WIN32
+#define WINPAUSE system("pause")
+#endif
+
 using namespace std;
 using namespace cv;
 
@@ -29,11 +33,12 @@ int main()
         input.open(filename.c_str()) ;
     }
 	vector<dataPoint> points;
-	while (input >> myPoint.pt.x >> ch >> myPoint.pt.y)
+	while (input >> myPoint.pt.x >> myPoint.pt.y)
     {
         myPoint.GaussDensity = 1;
         points.push_back(myPoint);
         cout<<myPoint.pt.x<<" "<<myPoint.pt.y<<endl;
     };     
+	WINPAUSE;
 	return 0;
 }
