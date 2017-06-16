@@ -20,7 +20,7 @@ int main()
 {
 	char window[]="Plotting Points";
 	cv::Mat mapperImage;
-	mapperImage = cv::Mat::zeros(3,3,CV_32F);
+	mapperImage = cv::Mat::zeros(w,w,CV_8UC3);
 	ifstream input;
     string filename;
     cout << "Enter the file name :" << endl;
@@ -42,12 +42,12 @@ int main()
     {
         myPoint.GaussDensity = 1;
         points.push_back(myPoint);
-        center = Point(myPoint.pt.x,myPoint.pt.x);
-		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);     
         cout<<myPoint.pt.x<<" "<<myPoint.pt.y<<endl;
-    };
+        center = Point(myPoint.pt.x,myPoint.pt.x);
+		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
+		
+    }
     imshow(window, mapperImage);
-    waitKey(0);
-    
+	waitKey(10000000);
 	return 0;
-}
+}	
