@@ -1,7 +1,12 @@
-#include "opencv2/core/core.hpp"
+#include <fstream>
 #include <iostream>
 #include <vector>
-#include <fstream>
+#include "opencv2/core/core.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
+#include "opencv2/highgui/highgui.hpp"
+
+
+#define w 400
 
 using namespace std;
 using namespace cv;
@@ -11,15 +16,19 @@ struct dataPoint{
 		double GaussDensity;
 };
 
-
 int main()
 {
+	char window[]="Plotting Points";
+	cv::Mat mapperImage;
+	mapperImage = cv::Mat::zeros(3,3,CV_32F);
 	ifstream input;
     string filename;
     cout << "Enter the file name :" << endl;
     cin >> filename;
     input.open(filename.c_str());
     char ch;
+    
+    Point2d center;
 	dataPoint myPoint;
     while(input.fail())
     {
@@ -33,7 +42,12 @@ int main()
     {
         myPoint.GaussDensity = 1;
         points.push_back(myPoint);
+        center = Point(myPoint.pt.x,myPoint.pt.x);
+		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);     
         cout<<myPoint.pt.x<<" "<<myPoint.pt.y<<endl;
-    };     
+    };
+    imshow(window, mapperImage);
+    waitKey(0);
+    
 	return 0;
 }
