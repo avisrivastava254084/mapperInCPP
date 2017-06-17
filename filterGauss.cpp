@@ -20,8 +20,8 @@ struct dataPoint {
 	double GaussDensity;
 };
 
-int main()
-{
+int main(){
+	
 	char window[] = "Plotting Points";
 	cv::Mat mapperImage;
 	mapperImage = cv::Mat::zeros(w, w, CV_8UC3);
@@ -31,27 +31,25 @@ int main()
 	cin >> filename;
 	input.open(filename.c_str());
 	char ch;
-
 	Point2d center;
 	dataPoint myPoint;
-	while (input.fail())
-	{
+	while (input.fail()){
 		input.clear();
 		cout << "Incorrect filename, please enter again" << endl;
 		cin >> filename;
 		input.open(filename.c_str());
 	}
+
 	vector<dataPoint> points;
-	while (input >> myPoint.pt.x >> myPoint.pt.y)
-	{
+
+	while (input >> myPoint.pt.x >> myPoint.pt.y){
 		myPoint.GaussDensity = 1;
 		points.push_back(myPoint);
 		cout << myPoint.pt.x << " " << myPoint.pt.y << endl;
 		center = Point(myPoint.pt.x, myPoint.pt.x);
-	circle(mapperImage, center, 1, CV_RGB(255, 0, 0), 3);
-
-}
-imshow(window, mapperImage);
-WINPAUSE;
-return 0;
+		circle(mapperImage, center, 1, CV_RGB(255, 0, 0), 3);
+	}
+	imshow(window, mapperImage);
+	WINPAUSE;
+	return 0;
 }
