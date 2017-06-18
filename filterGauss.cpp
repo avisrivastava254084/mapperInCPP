@@ -15,6 +15,7 @@ using namespace cv;
 struct dataPoint {
     Point2d pt;
     double GaussDensity;
+    double eccentricity;
 };
 
 double distanceBetweenCoordinates(dataPoint pt1, dataPoint pt2){
@@ -37,6 +38,20 @@ double calculateGaussDensity(vector<dataPoint> points, double sigma){
 	}
 }
 
+double calculateEccentricity(vector<dataPoint> points){
+	unsigned long long int N = points.size();
+	float exponent = 1.0;
+	for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
+		double summation = 0;
+		for(std::vector<dataPoint>::iterator jt = points.begin(); jt != points.end(); ++jt) {
+			summation += distanceBetweenCoordinates(*it, *jt);
+			dataPoint currentVector = *it;
+			currentVector.eccentricity = summation/N;
+			*it = currentVector;
+		}
+	}
+}
+	
 int main(){
     
     char window[] = "Plotting Points";
@@ -59,14 +74,22 @@ int main(){
     vector<dataPoint> points;
 
     while (input >> myPoint.pt.x >>ch>>myPoint.pt.y){
-        myPoint.GaussDensity = 1;
+        //myPoint.GaussDensity = 1;
         points.push_back(myPoint);
         cout << myPoint.pt.x << " " << myPoint.pt.y << endl;
-        center = Point(myPoint.pt.x, myPoint.pt.x);
-        circle(mapperImage, center, 1, CV_RGB(255, 0, 0), 3);
+        //center = Point(myPoint.pt.x, myPoint.pt.x);
+        //circle(mapperImage, center, 1, CV_RGB(255, 0, 0), 3);
+        
     }
+    calculateEccentricity(points);
+    calculateGaussDensity(points, 1.0);
+    for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
+		dataPoint currentVector = *it;
+		cout<<currentVector.GaussDensity<<" "<<currentVector.eccentricity<<endl;
+	}
+    
 
-    imshow(window, mapperImage);
+    //imshow(window, mapperImage);
     waitKey(1000000);
     return 0;
 }
