@@ -15,7 +15,6 @@ using namespace cv;
 struct dataPoint {
     Point2d pt;
     double GaussDensity;
-    double eccentricity;
 };
 
 double distanceBetweenCoordinates(dataPoint pt1, dataPoint pt2){
@@ -25,11 +24,11 @@ double distanceBetweenCoordinates(dataPoint pt1, dataPoint pt2){
 	return distance;
 }
 
-double calculateGaussDensity(vector<dataPoint> points, double sigma){
+double calculateGaussDensity(vector <dataPoint> points, double sigma){
 	unsigned long long int N = points.size();
-	for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
+	for(vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
 		double summation = 0;
-		for(std::vector<dataPoint>::iterator jt = points.begin(); jt != points.end(); ++jt) {
+		for(vector<dataPoint>::iterator jt = points.begin(); jt != points.end(); ++jt) {
 			summation += exp((-1)*(pow(distanceBetweenCoordinates(*it, *jt),2.0)/2*(pow(sigma,2))));
 		}
 		dataPoint currentVector = *it;
@@ -38,7 +37,8 @@ double calculateGaussDensity(vector<dataPoint> points, double sigma){
 	}
 }
 
-double calculateEccentricity(vector<dataPoint> points){
+/*
+double calculateEccentricity(const vector <dataPoint> &points){
 	unsigned long long int N = points.size();
 	float exponent = 1.0;
 	for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
@@ -51,8 +51,8 @@ double calculateEccentricity(vector<dataPoint> points){
 		}
 	}
 }
-	
-void readPoints(vector<dataPoint> points){
+*/	
+void readPoints(vector <dataPoint>& points){
 	ifstream input;
     string filename;
     cout << "Enter the file name :" << endl;
@@ -68,19 +68,19 @@ void readPoints(vector<dataPoint> points){
         input.open(filename.c_str());
     }
     while (input >> myPoint.pt.x >>ch>>myPoint.pt.y){
-        //myPoint.GaussDensity = 1;
+        myPoint.GaussDensity = 1;
         points.push_back(myPoint);
         cout << myPoint.pt.x << " " << myPoint.pt.y << endl;
         //center = Point(myPoint.pt.x, myPoint.pt.x);
         //circle(mapperImage, center, 1, CV_RGB(255, 0, 0), 3);
-        
-    }
+     }
+     //cout<<"Size of the vector:"<<points.size()<<endl;
 }
 
-double scalingAndFittingPointCloud(vector<dataPoint> points, int size){
+double scalingCloud(vector <dataPoint> points, int size){
 	dataPoint currentVector;
-	float x_min, y_min = -9999999999999.00;
-	float x_max, y_max = +9999999999999.00;
+	float x_min, y_min = +9999999999999.00;
+	float x_max, y_max = -9999999999999.00;
 	for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
 		currentVector = *it;
 		if(currentVector.pt.x < x_min)
@@ -96,7 +96,9 @@ double scalingAndFittingPointCloud(vector<dataPoint> points, int size){
 	scalingFactor /= size;
 	return scalingFactor;
 }
+
 void write_image(String const& name, Mat const& mapperImage){
+
 	try{
 		cv::imwrite( name, mapperImage ); 
 	}
@@ -107,25 +109,30 @@ void write_image(String const& name, Mat const& mapperImage){
 
 int main(){
     vector<dataPoint> points;
-	readPoints(points); //input taken as a point cloud.
-	scalingAndFittingPointCloud(points,400);
-    calculateEccentricity(points);
+    Point center;
+    readPoints(points); //input taken as a point cloud.
+	//calculateEccentricity(points);
     calculateGaussDensity(points, 1.0);
-    char window[] = "Plotting Points";
+    char window[] = "Scaled Cloud";
+    String scaledCloud = "test";
     Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
     cout<<"Enter the size of the image to be saved"<<endl;
     int size;
     cin>>size;
-    double scalingFactor = scalingAndFittingPointCloud(points, size);
+    double scalingFactor = scalingCloud(points, size);
+    cout<<"The scaling factor is:"<<scalingFactor<<endl;
     dataPoint currentVector;
+    cout<<"The size of the input cloud is:"<<points.size()<<endl;
     for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
 		currentVector = *it;
 		currentVector.pt.x *= scalingFactor;
 		currentVector.pt.y *= scalingFactor;
-		circle(mapperImage, Point(currentVector.pt.x, currentVector.pt.y), 1, CV_RGB(255,0,0), 3);
+		cout<<currentVector.pt.x<<" "<<currentVector.pt.y<<endl;;
+		center = Point(currentVector.pt.x, currentVector.pt.y);
+		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
     }
-	write_image(window, mapperImage);
-	//imshow(window, mapperImage);
-    waitKey(1000000);
-    return 0;
+    //imshow(window, mapperImage);
+    //waitKey(10000000);
+    write_image(scaledCloud+".png", mapperImage);
+	return 0;
 }
