@@ -52,11 +52,8 @@ double calculateEccentricity(vector<dataPoint> points){
 	}
 }
 	
-int main(){
-    
-    char window[] = "Plotting Points";
-    Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
-    ifstream input;
+void readPoints(vector<dataPoint> points){
+	ifstream input;
     string filename;
     cout << "Enter the file name :" << endl;
     cin >> filename;
@@ -70,9 +67,6 @@ int main(){
         cin >> filename;
         input.open(filename.c_str());
     }
-
-    vector<dataPoint> points;
-
     while (input >> myPoint.pt.x >>ch>>myPoint.pt.y){
         //myPoint.GaussDensity = 1;
         points.push_back(myPoint);
@@ -81,15 +75,57 @@ int main(){
         //circle(mapperImage, center, 1, CV_RGB(255, 0, 0), 3);
         
     }
+}
+
+double scalingAndFittingPointCloud(vector<dataPoint> points, int size){
+	dataPoint currentVector;
+	float x_min, y_min = -9999999999999.00;
+	float x_max, y_max = +9999999999999.00;
+	for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
+		currentVector = *it;
+		if(currentVector.pt.x < x_min)
+			x_min = currentVector.pt.x;
+		if(currentVector.pt.x > x_max)
+			x_max = currentVector.pt.x;
+		if(currentVector.pt.y < y_min)
+			y_min = currentVector.pt.y;
+		if(currentVector.pt.y > y_max)
+			y_max = currentVector.pt.y;
+	}
+	float scalingFactor = max(x_max-x_min, y_max-y_min);
+	scalingFactor /= size;
+	return scalingFactor;
+}
+void write_image(String const& name, Mat const& mapperImage){
+	try{
+		cv::imwrite( name, mapperImage ); 
+	}
+    catch (std::runtime_error& ex) {
+		fprintf(stderr, "Error in writing the image\n", ex.what()); 
+	}
+}
+
+int main(){
+    vector<dataPoint> points;
+	readPoints(points); //input taken as a point cloud.
+	scalingAndFittingPointCloud(points,400);
     calculateEccentricity(points);
     calculateGaussDensity(points, 1.0);
+    char window[] = "Plotting Points";
+    Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
+    cout<<"Enter the size of the image to be saved"<<endl;
+    int size;
+    cin>>size;
+    double scalingFactor = scalingAndFittingPointCloud(points, size);
+    dataPoint currentVector;
     for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
-		dataPoint currentVector = *it;
-		cout<<currentVector.GaussDensity<<" "<<currentVector.eccentricity<<endl;
-	}
-    
-
-    //imshow(window, mapperImage);
+		currentVector = *it;
+		currentVector.pt.x *= scalingFactor;
+		currentVector.pt.y *= scalingFactor;
+		circle(mapperImage, Point(currentVector.pt.x, currentVector.pt.y), 1, CV_RGB(255,0,0), 3);
+    }
+	write_image(window, mapperImage);
+	//imshow(window, mapperImage);
     waitKey(1000000);
     return 0;
 }
