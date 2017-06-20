@@ -24,7 +24,7 @@ double distanceBetweenCoordinates(dataPoint pt1, dataPoint pt2){
 	return distance;
 }
 
-double calculateGaussDensity(vector <dataPoint> points, double sigma){
+void calculateGaussDensity(vector <dataPoint>& points, double sigma){
 	unsigned long long int N = points.size();
 	for(vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
 		double summation = 0;
@@ -94,8 +94,8 @@ double scalingCloud(vector <dataPoint> points, int size){
 			y_max = currentVector.pt.y;
 	}
 	float scalingFactor = max(x_max-x_min, y_max-y_min);
-	scalingFactor /= size;
-	return scalingFactor;
+	size /= scalingFactor;
+	return size;
 }
 
 void write_image(String const& name, Mat const& mapperImage){
@@ -108,16 +108,17 @@ void write_image(String const& name, Mat const& mapperImage){
 	}
 }
 
-// uniform random number in [-1,1]
+// uniform random number in [0,1]
 double Rand() { return  (double) rand() / RAND_MAX; }
 
 // perturb points up to a noise bound
 void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud) {
 	Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
+	mapperImage = cv::Scalar(255,255,255);
     for ( size_t i = 0; i < cloud.size(); i++) {
            cloud[i].pt.x += noise_bound;
            cloud[i].pt.y += noise_bound;
-           circle(mapperImage, Point(cloud[i].pt.x,cloud[i].pt.y), 1, CV_RGB(255,255,255), 3);
+           circle(mapperImage, Point(cloud[i].pt.x,cloud[i].pt.y), 1, CV_RGB(255,0,0), 3);
            
     }
     String perturbedCloud = "testPerturbedCloud";
@@ -141,6 +142,7 @@ int main(){
     char window[] = "Scaled Cloud";
     String scaledCloud = "test";
     Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
+    mapperImage = cv::Scalar(255,255,255);
     cout<<"Enter the size of the image to be saved"<<endl;
     int size;
     cin>>size;
@@ -159,8 +161,8 @@ int main(){
     write_image(scaledCloud+".png", mapperImage);
     cout<<"5th task begins:"<<endl;
     cout<<"Please input the noise bound"<<endl;
-    double noiseBound;
-    cin>>noiseBound;
+    double noiseBound = 0.1;
     randomCloudNearCircle(noiseBound, points);
 	return 0;
 }
+
