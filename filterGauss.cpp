@@ -52,6 +52,7 @@ double calculateEccentricity(const vector <dataPoint> &points){
 	}
 }
 */	
+
 void readPoints(vector <dataPoint>& points){
 	ifstream input;
     string filename;
@@ -107,6 +108,30 @@ void write_image(String const& name, Mat const& mapperImage){
 	}
 }
 
+// uniform random number in [-1,1]
+double Rand() { return  (double) rand() / RAND_MAX; }
+
+// perturb points up to a noise bound
+void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud) {
+	Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
+    for ( size_t i = 0; i < cloud.size(); i++) {
+           cloud[i].pt.x += noise_bound;
+           cloud[i].pt.y += noise_bound;
+           circle(mapperImage, Point(cloud[i].pt.x,cloud[i].pt.y), 1, CV_RGB(255,255,255), 3);
+           
+    }
+    String perturbedCloud = "testPerturbedCloud";
+    write_image(perturbedCloud+".png", mapperImage);
+}
+
+void randomCloudNearCircle(double noiseBound, vector<dataPoint>& cloud){
+	//selecting a random angle for the complete cloud//
+	double shiftAngle = Rand()* 2 * pi;
+	if(shiftAngle > noiseBound)
+		shiftAngle = noiseBound;
+	Perturb_Cloud(shiftAngle, cloud);
+}
+
 int main(){
     vector<dataPoint> points;
     Point center;
@@ -131,8 +156,11 @@ int main(){
 		center = Point(currentVector.pt.x, currentVector.pt.y);
 		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
     }
-    //imshow(window, mapperImage);
-    //waitKey(10000000);
     write_image(scaledCloud+".png", mapperImage);
+    cout<<"5th task begins:"<<endl;
+    cout<<"Please input the noise bound"<<endl;
+    double noiseBound;
+    cin>>noiseBound;
+    randomCloudNearCircle(noiseBound, points);
 	return 0;
 }
