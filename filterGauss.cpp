@@ -110,27 +110,37 @@ void write_image(String const& name, Mat const& mapperImage){
 
 // uniform random number in [0,1]
 double Rand() { return  (double) rand() / RAND_MAX; }
+// uniform random number in [-1,1]
+double RandUnity() { return  2 * (double) rand() / RAND_MAX -1 ; }
 
 // perturb points up to a noise bound
-void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud) {
+void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud, double scalingFactor) {
 	Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
 	mapperImage = cv::Scalar(255,255,255);
-    for ( size_t i = 0; i < cloud.size(); i++) {
-           cloud[i].pt.x += noise_bound;
-           cloud[i].pt.y += noise_bound;
-           circle(mapperImage, Point(cloud[i].pt.x,cloud[i].pt.y), 1, CV_RGB(255,0,0), 3);
-           
+	Point2d center;
+    for ( int i = 0; i < cloud.size(); i++) {
+           cloud[i].pt.x = (cloud[i].pt.x + (noise_bound * RandUnity())) * scalingFactor;
+           cloud[i].pt.y = (cloud[i].pt.y + (noise_bound * RandUnity())) * scalingFactor;
+           if(cloud[i].pt.x<0) { cloud[i].pt.x *= -1; }
+           if(cloud[i].pt.y<0) { cloud[i].pt.y *= -1; }
+           cout << "Final Point is:" << cloud[i].pt.x << " " << cloud[i].pt.y << endl;
+           center = Point(cloud[i].pt.x,cloud[i].pt.y);
+           circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
     }
     String perturbedCloud = "testPerturbedCloud";
     write_image(perturbedCloud+".png", mapperImage);
 }
 
-void randomCloudNearCircle(double noiseBound, vector<dataPoint>& cloud){
+void randomCloudNearCircle(double noiseBound, int imageSize, int cloudSize){
 	//selecting a random angle for the complete cloud//
-	double shiftAngle = Rand()* 2 * pi;
-	if(shiftAngle > noiseBound)
-		shiftAngle = noiseBound;
-	Perturb_Cloud(shiftAngle, cloud);
+	vector<dataPoint> cloud(cloudSize);
+	for(int i = 0; i<cloudSize; i++){
+		double shiftAngle = Rand()* 2 * pi;
+		cloud[i].pt.x = cos(shiftAngle);
+		cloud[i].pt.y = sin(shiftAngle);
+	}
+	double scalingFactor = scalingCloud(cloud,imageSize);
+	Perturb_Cloud(noiseBound, cloud, scalingFactor);
 }
 
 int main(){
@@ -144,9 +154,9 @@ int main(){
     Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
     mapperImage = cv::Scalar(255,255,255);
     cout<<"Enter the size of the image to be saved"<<endl;
-    int size;
-    cin>>size;
-    double scalingFactor = scalingCloud(points, size);
+    int imageSize;
+    cin>>imageSize;
+    double scalingFactor = scalingCloud(points, imageSize);
     cout<<"The scaling factor is:"<<scalingFactor<<endl;
     dataPoint currentVector;
     cout<<"The size of the input cloud is:"<<points.size()<<endl;
@@ -159,10 +169,12 @@ int main(){
 		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
     }
     write_image(scaledCloud+".png", mapperImage);
-    cout<<"5th task begins:"<<endl;
-    cout<<"Please input the noise bound"<<endl;
+    cout << "5th task begins:"<<endl;
+    cout << "Please input the size of the point cloud"<<endl;
+    int cloudSize;
+    cin >> cloudSize;
     double noiseBound = 0.1;
-    randomCloudNearCircle(noiseBound, points);
+    randomCloudNearCircle(noiseBound, imageSize, cloudSize);
 	return 0;
 }
 
