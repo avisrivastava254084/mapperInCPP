@@ -114,15 +114,16 @@ double Rand() { return  (double) rand() / RAND_MAX; }
 double RandUnity() { return  2 * (double) rand() / RAND_MAX -1 ; }
 
 // perturb points up to a noise bound
-void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud, double scalingFactor) {
+void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud, double scalingFactor, int imageSize) {
 	Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
 	mapperImage = cv::Scalar(255,255,255);
 	Point2d center;
+	cout<<"The image size ka half is:"<<(imageSize/2)<<endl;
     for ( int i = 0; i < cloud.size(); i++) {
-           cloud[i].pt.x = (cloud[i].pt.x + (noise_bound * RandUnity())) * scalingFactor;
-           cloud[i].pt.y = (cloud[i].pt.y + (noise_bound * RandUnity())) * scalingFactor;
-           if(cloud[i].pt.x<0) { cloud[i].pt.x *= -1; }
-           if(cloud[i].pt.y<0) { cloud[i].pt.y *= -1; }
+           cloud[i].pt.x = (((cloud[i].pt.x + (noise_bound * Rand()))*scalingFactor) + imageSize/2);
+           cloud[i].pt.y = (((cloud[i].pt.y + (noise_bound * Rand()))*scalingFactor) + imageSize/2);
+           //if(cloud[i].pt.x<0) { cloud[i].pt.x *= -1; }
+           //if(cloud[i].pt.y<0) { cloud[i].pt.y *= -1; }
            cout << "Final Point is:" << cloud[i].pt.x << " " << cloud[i].pt.y << endl;
            center = Point(cloud[i].pt.x,cloud[i].pt.y);
            circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
@@ -138,9 +139,10 @@ void randomCloudNearCircle(double noiseBound, int imageSize, int cloudSize){
 		double shiftAngle = Rand()* 2 * pi;
 		cloud[i].pt.x = cos(shiftAngle);
 		cloud[i].pt.y = sin(shiftAngle);
+		cout<<"Angle generated points are:"<<cloud[i].pt.x<<" "<<cloud[i].pt.y<<endl;
 	}
 	double scalingFactor = scalingCloud(cloud,imageSize);
-	Perturb_Cloud(noiseBound, cloud, scalingFactor);
+	Perturb_Cloud(noiseBound, cloud, scalingFactor, imageSize);
 }
 
 int main(){
@@ -177,4 +179,3 @@ int main(){
     randomCloudNearCircle(noiseBound, imageSize, cloudSize);
 	return 0;
 }
-
