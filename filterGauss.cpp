@@ -20,7 +20,7 @@ struct dataPoint {
 double distanceBetweenCoordinates(dataPoint pt1, dataPoint pt2){
 	double distanceX = (pt1.pt.x-pt2.pt.x)*(pt1.pt.x-pt2.pt.x);
 	double distanceY = (pt1.pt.y-pt2.pt.y)*(pt1.pt.y-pt2.pt.y);
-	double distance = sqrt(distanceX - distanceY);
+	double distance = sqrt(abs(distanceX - distanceY));
 	return distance;
 }
 
