@@ -17,10 +17,20 @@ struct dataPoint {
     double GaussDensity;
 };
 
+void write_image(String const& name, Mat const& mapperImage){
+
+	try{
+		cv::imwrite( name, mapperImage ); 
+	}
+    catch (std::runtime_error& ex) {
+		fprintf(stderr, "Error in writing the image\n", ex.what()); 
+	}
+}
+
 double distanceBetweenCoordinates(dataPoint pt1, dataPoint pt2){
 	double distanceX = (pt1.pt.x-pt2.pt.x)*(pt1.pt.x-pt2.pt.x);
 	double distanceY = (pt1.pt.y-pt2.pt.y)*(pt1.pt.y-pt2.pt.y);
-	double distance = sqrt(abs(distanceX - distanceY));
+	double distance = sqrt(distanceX + distanceY);
 	return distance;
 }
 
@@ -29,7 +39,7 @@ void calculateGaussDensity(vector <dataPoint>& points, double sigma){
 	for(vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
 		double summation = 0;
 		for(vector<dataPoint>::iterator jt = points.begin(); jt != points.end(); ++jt) {
-			summation += exp((-1)*(pow(distanceBetweenCoordinates(*it, *jt),2.0)/2*(pow(sigma,2))));
+			summation += exp((-1)*(pow(distanceBetweenCoordinates(*it, *jt),2.0)/(2*(pow(sigma,2)))));
 		}
 		dataPoint currentVector = *it;
 		currentVector.GaussDensity = summation/(N*(pow((sqrt(2*pi)*sigma),2)));
@@ -78,11 +88,27 @@ void readPoints(vector <dataPoint>& points){
      //cout<<"Size of the vector:"<<points.size()<<endl;
 }
 
-double scalingCloud(vector <dataPoint> points, int size){
+void drawingCloud(float scalingFactor, vector<dataPoint> copyPoints, int imageSize){
+	Mat mapperImage = Mat::zeros(imageSize, imageSize, CV_8UC3);
+    mapperImage = cv::Scalar(255,255,255);
+	dataPoint currentVector; Point2d centre;
+	for(std::vector<dataPoint>::iterator it = copyPoints.begin(); it != copyPoints.end(); ++it) {
+		currentVector = *it;
+		currentVector.pt.x *= scalingFactor;
+		currentVector.pt.y *= scalingFactor;
+		cout<<currentVector.pt.x<<" "<<currentVector.pt.y<<endl;;
+		centre = Point(currentVector.pt.x, currentVector.pt.y);
+		circle(mapperImage, centre, 1, CV_RGB(255,0,0), 3);
+    }
+    write_image("scaledCloud.png", mapperImage);
+}
+
+void scalingCloud(vector <dataPoint>& points, int size){
+	vector<dataPoint> copyPoints(points);
 	dataPoint currentVector;
 	float x_min, y_min = +9999999999999.00;
 	float x_max, y_max = -9999999999999.00;
-	for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
+	for(std::vector<dataPoint>::iterator it = copyPoints.begin(); it != copyPoints.end(); ++it) {
 		currentVector = *it;
 		if(currentVector.pt.x < x_min)
 			x_min = currentVector.pt.x;
@@ -94,18 +120,8 @@ double scalingCloud(vector <dataPoint> points, int size){
 			y_max = currentVector.pt.y;
 	}
 	float scalingFactor = max(x_max-x_min, y_max-y_min);
-	size /= scalingFactor;
-	return size;
-}
-
-void write_image(String const& name, Mat const& mapperImage){
-
-	try{
-		cv::imwrite( name, mapperImage ); 
-	}
-    catch (std::runtime_error& ex) {
-		fprintf(stderr, "Error in writing the image\n", ex.what()); 
-	}
+	scalingFactor = size/scalingFactor;
+	drawingCloud(scalingFactor, copyPoints, size);
 }
 
 // uniform random number in [0,1]
@@ -113,69 +129,15 @@ double Rand() { return  (double) rand() / RAND_MAX; }
 // uniform random number in [-1,1]
 double RandUnity() { return  2 * (double) rand() / RAND_MAX -1 ; }
 
-// perturb points up to a noise bound
-void Perturb_Cloud (double noise_bound, std::vector<dataPoint>& cloud, double scalingFactor, int imageSize) {
-	Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
-	mapperImage = cv::Scalar(255,255,255);
-	Point2d center;
-	cout<<"The image size ka half is:"<<(imageSize/2)<<endl;
-    for ( int i = 0; i < cloud.size(); i++) {
-           cloud[i].pt.x = (((cloud[i].pt.x + (noise_bound * Rand()))*scalingFactor) + imageSize/2);
-           cloud[i].pt.y = (((cloud[i].pt.y + (noise_bound * Rand()))*scalingFactor) + imageSize/2);
-           //if(cloud[i].pt.x<0) { cloud[i].pt.x *= -1; }
-           //if(cloud[i].pt.y<0) { cloud[i].pt.y *= -1; }
-           cout << "Final Point is:" << cloud[i].pt.x << " " << cloud[i].pt.y << endl;
-           center = Point(cloud[i].pt.x,cloud[i].pt.y);
-           circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
-    }
-    String perturbedCloud = "testPerturbedCloud";
-    write_image(perturbedCloud+".png", mapperImage);
-}
-
-void randomCloudNearCircle(double noiseBound, int imageSize, int cloudSize){
-	//selecting a random angle for the complete cloud//
-	vector<dataPoint> cloud(cloudSize);
-	for(int i = 0; i<cloudSize; i++){
-		double shiftAngle = Rand()* 2 * pi;
-		cloud[i].pt.x = cos(shiftAngle);
-		cloud[i].pt.y = sin(shiftAngle);
-		cout<<"Angle generated points are:"<<cloud[i].pt.x<<" "<<cloud[i].pt.y<<endl;
-	}
-	double scalingFactor = scalingCloud(cloud,imageSize);
-	Perturb_Cloud(noiseBound, cloud, scalingFactor, imageSize);
-}
-
 int main(){
     vector<dataPoint> points;
-    Point center;
     readPoints(points); //input taken as a point cloud.
 	//calculateEccentricity(points);
     calculateGaussDensity(points, 1.0);
-    char window[] = "Scaled Cloud";
     String scaledCloud = "test";
-    Mat mapperImage = Mat::zeros(w, w, CV_8UC3);
-    mapperImage = cv::Scalar(255,255,255);
     cout<<"Enter the size of the image to be saved"<<endl;
     int imageSize;
     cin>>imageSize;
-    double scalingFactor = scalingCloud(points, imageSize);
-    cout<<"The scaling factor is:"<<scalingFactor<<endl;
-    dataPoint currentVector;
-    cout<<"The size of the input cloud is:"<<points.size()<<endl;
-    for(std::vector<dataPoint>::iterator it = points.begin(); it != points.end(); ++it) {
-		currentVector = *it;
-		currentVector.pt.x *= scalingFactor;
-		currentVector.pt.y *= scalingFactor;
-		cout<<currentVector.pt.x<<" "<<currentVector.pt.y<<endl;;
-		center = Point(currentVector.pt.x, currentVector.pt.y);
-		circle(mapperImage, center, 1, CV_RGB(255,0,0), 3);
-    }
-    write_image(scaledCloud+".png", mapperImage);
-    cout << "5th task begins:"<<endl;
-    cout << "Please input the size of the point cloud"<<endl;
-    int cloudSize;
-    cin >> cloudSize;
-    double noiseBound = 0.1;
-    randomCloudNearCircle(noiseBound, imageSize, cloudSize);
-	return 0;
+    scalingCloud(points, imageSize);
+    return 0;
 }
