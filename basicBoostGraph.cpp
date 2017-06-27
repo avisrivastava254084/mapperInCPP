@@ -16,9 +16,9 @@ struct VertexProperty {
   Point2d pt;
 };
 
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS,
-                              VertexProperty> Graph;
+typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperty> Graph;
 typedef boost::graph_traits<Graph>::vertex_iterator VItr;
+typedef boost::graph_traits<Graph>::edge_iterator EItr;
 typedef boost::graph_traits<Graph>::adjacency_iterator adjacency_iterator;
 typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 
