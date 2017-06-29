@@ -84,7 +84,7 @@ void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval,
 	Point2d plottedPoint;
 	plottedPoint.x = ((1-t) * g[u].pt.x) + ((t) * g[v].pt.x); cout<<"The x is:"<<plottedPoint.x<<endl;
 	plottedPoint.y = ((1-t) * g[u].pt.y) + ((t) * g[v].pt.y); cout<<"The y is:"<<plottedPoint.y<<endl;
-	circle(mapperImage, plottedPoint, 1, CV_RGB(0,255,0), 1);
+	circle(mapperImage, plottedPoint, 1, CV_RGB(0,0,0), 1);
     write_image("randomPoint.png", mapperImage);
 }	
 
