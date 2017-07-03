@@ -6,7 +6,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <math.h>
 
-#define w 400
+
 #define pi 3.14159265358979323846  /* pi */
 
 using namespace std;
@@ -87,6 +87,73 @@ void readPoints(vector <dataPoint>& points){
      }
      //cout<<"Size of the vector:"<<points.size()<<endl;
 }
+bool sortByGauss(const pair<double,Point2d> &a,const pair<double,Point2d> &b)
+{
+return (a.first < b.first);
+}
+void colormap(std::vector<dataPoint>& points, double scalingFactor, int imageSize)
+{
+    dataPoint myPoint;
+    double lBound,rBound,t,R,G,B;
+    long i=0;
+    Vec3b clBound,crBound,computed_color;
+    Point2d center;
+    Mat fdpImage = Mat::zeros(imageSize, imageSize, CV_8UC3);
+	fdpImage = cv::Scalar(255,255,255);
+    vector<Vec3b> colormap;
+    colormap.push_back(Vec3b(255,0,0));
+    colormap.push_back(Vec3b(0,255,0));
+    colormap.push_back(Vec3b(0,255,255));
+    colormap.push_back(Vec3b(0,0,255));
+    int pointssize=points.size();
+    int colorsize=colormap.size()-1;
+    float fit=(float)pointssize/(float)colorsize;
+    int ffit=ceil((float)fit);
+    vector< pair<double, Point2d> > fdp;
+    for(vector<dataPoint>::iterator it=points.begin(); it!= points.end(); it++) {
+		dataPoint copyPoint = *it;
+		fdp.push_back( make_pair(copyPoint.GaussDensity, copyPoint.pt));
+	}
+	sort(fdp.begin(), fdp.end(), sortByGauss);
+	cout<<"Testing whether the sorting works"<<endl;
+	int iAvi = 0;
+	for(vector<dataPoint>::iterator it=points.begin(); it!= points.end(); it++) {
+	cout<<fdp[iAvi].first<<" "<<endl;
+	cout<<"x "<<fdp[iAvi].second.x<<"y "<<fdp[iAvi].second.y<<endl;
+		iAvi++;
+	}
+    //std::sort(points.begin(), points.end());
+    for(vector< pair<double, Point2d> >::iterator it=fdp.begin(); it!= fdp.end(); it++) {
+       pair<double, Point2d> myPoint= *it;
+        if(i%ffit==0) {
+            lBound=fdp[i].first;
+        //  cout<< lBound <<endl;
+                if((i+ffit)<points.size()) {
+                rBound=fdp[(i+(ffit-1))].first; }
+            else { rBound=fdp[(points.size()-1)].first; }
+        }
+            cout<<lBound<<" to "<<rBound<<endl;
+            if(rBound-lBound!=0) {
+			t=(fdp[i].first-lBound)/(rBound-lBound);
+             }
+			else { t=0; }
+                     if(i%ffit==0) {
+            clBound=colormap[i/ffit];
+             if(((i/ffit)+1)<colormap.size()) {
+                 crBound=colormap[((i/ffit)+1)]; }
+             else { crBound=colormap[(colormap.size()-1)]; } }
+            cout<<"t "<<t<<endl;
+		    computed_color=(((1-t)*clBound)+(t*crBound));
+            cout<<computed_color<<endl;
+            cout<<"R G B "<<R<<" "<<G<<" "<<B<<endl;
+            center=Point((scalingFactor*myPoint.second.x),(scalingFactor*myPoint.second.y));
+            circle(fdpImage, center, 2, Scalar(computed_color), 2); 
+            i++;
+		        String coloredCloud = "fdptestcoloredCloud";
+                write_image(coloredCloud+".png", fdpImage);
+                }
+}
+
 
 void drawingCloud(float scalingFactor, vector<dataPoint> copyPoints, int imageSize){
 	Mat mapperImage = Mat::zeros(imageSize, imageSize, CV_8UC3);
@@ -101,7 +168,11 @@ void drawingCloud(float scalingFactor, vector<dataPoint> copyPoints, int imageSi
 		circle(mapperImage, centre, 1, CV_RGB(255,0,0), 3);
     }
     write_image("scaledCloud.png", mapperImage);
+    
 }
+
+
+
 
 void scalingCloud(vector <dataPoint>& points, int size){
 	vector<dataPoint> copyPoints(points);
@@ -122,7 +193,10 @@ void scalingCloud(vector <dataPoint>& points, int size){
 	float scalingFactor = max(x_max-x_min, y_max-y_min);
 	scalingFactor = size/scalingFactor;
 	drawingCloud(scalingFactor, copyPoints, size);
+	colormap(copyPoints, scalingFactor, size);
+	
 }
+
 
 // uniform random number in [0,1]
 double Rand() { return  (double) rand() / RAND_MAX; }
@@ -133,11 +207,12 @@ int main(){
     vector<dataPoint> points;
     readPoints(points); //input taken as a point cloud.
 	//calculateEccentricity(points);
-    calculateGaussDensity(points, 1.0);
+    calculateGaussDensity(points, 7.0);
     String scaledCloud = "test";
     cout<<"Enter the size of the image to be saved"<<endl;
     int imageSize;
     cin>>imageSize;
     scalingCloud(points, imageSize);
+    
     return 0;
 }
