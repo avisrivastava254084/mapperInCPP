@@ -13,7 +13,7 @@ using namespace cv;
 
 struct VertexProperty{
 	Point2d pt;
-	char name;
+	int name;
 };
 
 typedef boost::property<boost::edge_weight_t, double> EdgeProperty;
@@ -36,37 +36,70 @@ void write_image(String const& name, Mat const& mapperImage) {
 }
 
 void euclideanVertices(){
-	int m, n, i, j, imageLength, imageBreadth, mItr, nItr; mItr = nItr = 0;
-	cout<<"Enter the image's length and breadth:"<<endl;
-	cin >> imageLength >> imageBreadth;
-	Mat mapperImage = Mat::zeros(600, 600, CV_8UC3);
-	mapperImage = cv::Scalar(255,255,255);
+	int m, n, i, j;
 	int vertexName = 65;
 	VItr vitr, vend;
 	cout<<"Enter the m and n:"<<endl;
 	cin >> m >> n;
-	Point2d origin;
-	origin.x = imageLength / 2;
-	origin.y = imageBreadth / 2;
-	m *= 10; m += ceil(origin.x); n *= 10; n += ceil(origin.y);
+	m++; n++;
 	Graph g(m*n);
 	boost::tie(vitr, vend) = boost::vertices(g);
 	cout<<"And the points are:"<<endl;
-	while( vitr != vend){
-		for( i = ceil(double(origin.x)); i < m; i += 10){
-			for( j = ceil(double(origin.y)); j < n; j += 10){
-				g[*vitr].pt.x = i;
-				g[*vitr].pt.y = j;
-				g[*vitr].name = char(vertexName);
-				++vertexName;
-				cout << g[*vitr].pt.x <<" "<< g[*vitr].pt.y << endl;
-				circle(mapperImage, Point(g[*vitr].pt.x, g[*vitr].pt.y), 1, CV_RGB(255,0,0), 3);
-				++vitr;
+	for( i = 0; i <= m; i++){
+		for( j = 0; j <= n; j++){
+			g[*vitr].pt.x = i;
+			g[*vitr].pt.y = j;
+			g[*vitr].name = vertexName;
+			++vertexName;
+			cout << g[*vitr].pt.x <<" "<< g[*vitr].pt.y << endl;
+			++vitr;
+		}
+	}
+	cout<<"Testing the indices of the graph"<<endl;
+	tie(vitr, vend) = vertices(g);
+	int lengthLimit = m-1; int breadthLimit = m * (n-1);
+	cout << "The values of limits are:" << lengthLimit << " " << breadthLimit << endl;
+	for(int i = 0; i < (m*n); i++){
+		if( i == lengthLimit && i != breadthLimit ){
+			if( (i+m) <= (m*n) ){
+				add_edge(i, (i+m), 1, g);
+				cout << "LengthLimit An edge is added between the vertices:" << i << " " << (i+m) << endl;
+			}
+			lengthLimit += m;
+			continue;
+		}
+		if( i == breadthLimit && i != lengthLimit ){
+			if( (i+1) <= (m*n) ){
+				add_edge(i, (i+1), 1, g);
+				cout << "BreadthLimit An edge is added between the vertices:" << i << " " << (i+1) << endl;
+			}
+			breadthLimit++;
+			continue;
+		}
+		if( i == ((m*n) - 1) ){
+			break;
+		}
+		else{
+			if( (i+1) <= (m*n) ){
+				add_edge(i, (i+1), 1, g);
+				cout << "Else first An edge is added between the vertices:" << i << " " << (i+1) << endl;
+			}
+			if( (i+m) <= (m*n) ){
+				add_edge(i, (i+m), 1, g);
+				cout << "Else second An edge is added between the vertices:" << i << " " << (i+m) << endl;
 			}
 		}
 	}
-	write_image("squareGrid.png", mapperImage);
+	EdgePair ep; Point2d vertexOne, vertexTwo;
+	VertexDescriptor u, v;
+	/*for(ep = edges(g); ep.first != ep.second; ++ep.first){
+		u = source(*ep.first,g); vertexOne = g[u].pt;
+		v = target(*ep.first,g); vertexTwo = g[v].pt;
+		cout << "An edge exists between:" << u <<" "<< v <<endl;
+	}*/
 }
+	//write_image("squareGrid.png", mapperImage);
+
 
 int main(){
 	euclideanVertices();
