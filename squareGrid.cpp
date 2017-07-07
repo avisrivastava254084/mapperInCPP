@@ -7,6 +7,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <math.h>
+#include <random>
 
 using namespace std;
 using namespace cv;
@@ -38,6 +39,17 @@ void write_image(String const& name, Mat const& mapperImage) {
   }
 }
 
+int RandEdgeNumber() {
+	//improve this reinitialisation of variables as this function will be called thousand times.
+	const int range_from = 1;
+    const int range_to = 10;
+    std::random_device rand_dev;
+    std::mt19937 generator(rand_dev());
+    std::uniform_int_distribution<int> distr(range_from, range_to);
+    int randomCellNumber = distr(generator);
+    return randomCellNumber;
+}
+    
 void euclideanVertices(Graph& g, int m, int n) {
 	int a = 0;
 	Mat aviImage = Mat::zeros(600, 600, CV_8UC3);
@@ -99,9 +111,7 @@ void Scaling_Parameters (Graph const& cloud, Point image_sizes, double& scale, P
 }
 
 // Draw a scaled cloud to the image of a given size
-void Draw_Cloud (Graph const& cloud, int radius, Scalar color, Mat& image) {
-	double scale;
-	Point2d shift;
+void Draw_Cloud (Graph const& cloud, int radius, Scalar color, Mat& image, double& scale, Point2d& shift) {
 	Scaling_Parameters( cloud, image.size(), scale, shift );
 	VItr vitr, vend;
 	boost:tie(vitr, vend) = boost::vertices(cloud);
@@ -109,17 +119,18 @@ void Draw_Cloud (Graph const& cloud, int radius, Scalar color, Mat& image) {
 	for(ep = edges(cloud); ep.first != ep.second; ++ep.first) {
 		u = source(*ep.first, cloud); vertexOne = cloud[u].pt;
 		v = target(*ep.first, cloud); vertexTwo = cloud[v].pt;
-		vertexOne *= scale;
-		vertexTwo *= scale;
+		vertexOne *= scale; vertexOne + shift;
+		vertexTwo *= scale; vertexTwo + shift;
 		line(image, vertexOne, vertexTwo, CV_RGB(0,0,255));
 	}
 	for (; vitr != vend; ++vitr) {
 		circle( image, Point( scale * cloud[*vitr].pt + shift ), radius, color, -1 );
 	}
-	write_image("squareGridScaled.png", image);
+	write_image("squareGridDouble.png", image);
 }
 
 int main() {
+	srand(time(NULL));
 	cout << "Enter the m and n:" << endl;
 	int m, n;
 	cin >> m >> n;
@@ -132,5 +143,6 @@ int main() {
 	mapperImage = cv::Scalar(255,255,255);
 	cout << "Please enter the radius of the vertices' circles." << endl;
 	int radius; cin >> radius;
-	Draw_Cloud(g, radius, CV_RGB(255,0,0), mapperImage);
+	Draw_Cloud(g, radius, CV_RGB(255,0,0), mapperImage, scale, shift);
+	return 0;
 }
