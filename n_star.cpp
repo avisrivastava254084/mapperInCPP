@@ -52,7 +52,7 @@ int RandEdgeNumber() {
 }
 
 void n_star(Graph& g, int n, Mat& image) {
-	Point2d image_size = image.size();
+	Point image_size = image.size();
 	Point2d image_center(image_size.x / 2, image_size.y / 2);
 	g[0].pt.x = image_center.x;
 	g[0].pt.y = image_center.x;
