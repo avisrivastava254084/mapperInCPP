@@ -49,7 +49,7 @@ bool sortByEdgelength(const pair<pair<Point2d, Point2d>, double> &a, const pair<
 	return (a.second < b.second);
 }
 
-void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval, EdgeLinear& edgesLinear, Graph& g, Mat const& mapperImage){
+void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval, EdgeLinear& edgesLinear, Graph& g, Mat const& mapperImage, vector<Point2d>& RandomPoints){
 	double linearPoint = RandUnity() * totalLength; double t;
 	if(linearPoint == 0) { linearPoint += RandUnity(); }
 	cout<<endl<<"The random linear point is:"<<linearPoint<<endl; int noOfEdge = 0;
@@ -66,7 +66,8 @@ void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval,
 		cout<<endl<<"The check variable is:"<<check<<" ";
 		noOfEdge++;
 	}
-	VertexDescriptor u,v; Point2d vertexOne, vertexTwo; int trackOfEdge = 0;
+	
+	VertexDescriptor u,v; Point2d vertexOne, vertexTwo; int trackOfEdge = 1; //because noOfEdge is zero and I have made sure that 0 can't be the random point on the linear edges.
 	EdgePair ep;
 	cout<<"Now, iterate through the edges' lengths."<<endl; 
 	for(ep = edges(g); ep.first != ep.second; ++ep.first){
@@ -84,11 +85,12 @@ void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval,
 	Point2d plottedPoint;
 	plottedPoint.x = ((1-t) * g[u].pt.x) + ((t) * g[v].pt.x); cout<<"The x is:"<<plottedPoint.x<<endl;
 	plottedPoint.y = ((1-t) * g[u].pt.y) + ((t) * g[v].pt.y); cout<<"The y is:"<<plottedPoint.y<<endl;
-	circle(mapperImage, plottedPoint, 1, CV_RGB(0,0,0), 1);
+	RandomPoints.push_back(plottedPoint);
+	circle(mapperImage, plottedPoint, 1, CV_RGB(0,0,0), 3);
     write_image("randomPoint.png", mapperImage);
 }	
 
-void euclideanGraph(Graph& g) {
+void euclideanGraph(Graph& g, vector<Point2d>& RandomPoints, int randomCloudSize) {
   Mat mapperImage = Mat::zeros(600, 600, CV_8UC3);
   mapperImage = cv::Scalar(255,255,255);
   VItr vitr, vend;
@@ -142,10 +144,15 @@ void euclideanGraph(Graph& g) {
   }
   cout<<endl;
   cout<<endl<<"And this is the total length:"<<totalLength<<endl;
-  randomPoint(totalLength, edgesLinearInterval, edgesLinear, g, mapperImage);
+  
+  for(int iterate = 0; iterate < randomCloudSize; iterate++) {
+	  randomPoint(totalLength, edgesLinearInterval, edgesLinear, g, mapperImage, RandomPoints);
+  }
 }
 
 int main() {
     Graph g(4);
-    euclideanGraph(g);
+    vector<Point2d> RandomPoints;
+    int randomCloudSize; cout << endl << "Please enter the size of the random cloud that you want to generate" << endl; cin >> randomCloudSize;
+    euclideanGraph(g, RandomPoints, randomCloudSize);
   }
