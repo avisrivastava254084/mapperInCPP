@@ -8,7 +8,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <math.h>
 #include <cstdlib>
-#include <ctime> 
 
 
 using namespace std;
@@ -104,11 +103,11 @@ void Scaling_Parameters(std::vector<Data>const& cloud, Point
 
 	Point2d image_center(image_sizes.x / 2, image_sizes.y / 2);
 
-	//scale = std::min(image_sizes.x / cloud_sizes.x, image_sizes.y /
-		//cloud_sizes.y);
-		scale = 5;
-	//shift = image_center - scale * cloud_center;
-	shift = Point2d(50, 50);
+	scale = std::min(image_sizes.x / cloud_sizes.x, image_sizes.y /
+		cloud_sizes.y);
+		//scale = 5;
+		//shift = image_center - scale * cloud_center;
+	shift = Point2d(image_sizes.x / 2, image_sizes.y / 2);
 
 }
 
@@ -134,16 +133,16 @@ bool sortByEdgelength(const pair<pair<Point2d, Point2d>, double> &a, const pair<
 	return (a.second < b.second);
 }
 
-void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval, EdgeLinear& edgesLinear, Graph& g, Mat const& mapperImage) {
+void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval, EdgeLinear& edgesLinear, Graph& graph, Mat const& mapperImage) {
 	double linearPoint = RandUnity() * totalLength; double t;
 	if (linearPoint == 0) { linearPoint += RandUnity(); }
 	cout << endl << "The random linear point is:" << linearPoint << endl; int noOfEdge = 0;
 	int check = 0;
-	for (vector<double>::iterator it = edgesLinearInterval.begin(); it != edgesLinearInterval.end(); ++it) {
-		if ((*it) >(linearPoint)) {
-			cout << endl << "the value at it is:" << (*it) << "and at the prev pos is:" << (*(it - 1)) << endl;
-			cout << "The denominator is:" << ((*it) - (*(it - 1))) << endl;
-			t = ((linearPoint - (*(it - 1))) / ((*it) - (*(it - 1))));
+	for (vector<double>::iterator linearEdgeIntervalIterator = edgesLinearInterval.begin(); linearEdgeIntervalIterator != edgesLinearInterval.end(); ++linearEdgeIntervalIterator) {
+		if ((*linearEdgeIntervalIterator) >(linearPoint)) {
+			cout << endl << "the value at it is:" << (*linearEdgeIntervalIterator) << "and at the prev pos is:" << (*(linearEdgeIntervalIterator - 1)) << endl;
+			cout << "The denominator is:" << ((*linearEdgeIntervalIterator) - (*(linearEdgeIntervalIterator - 1))) << endl;
+			t = ((linearPoint - (*(linearEdgeIntervalIterator - 1))) / ((*linearEdgeIntervalIterator) - (*(linearEdgeIntervalIterator - 1))));
 			cout << endl << "The value of t is:" << t << endl;
 			check = 1;
 			break;
@@ -152,13 +151,13 @@ void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval,
 		noOfEdge++;
 	}
 	VertexDescriptor u, v; Point2d vertexOne, vertexTwo; int trackOfEdge = 0;
-	EdgePair ep;
+	EdgePair edge_pair;
 	cout << "Now, iterate through the edges' lengths." << endl;
-	for (ep = edges(g); ep.first != ep.second; ++ep.first) {
+	for (edge_pair = edges(graph); edge_pair.first != edge_pair.second; ++edge_pair.first) {
 		if (trackOfEdge == noOfEdge) {
 			cout << endl << "Hi" << endl;
-			u = source(*ep.first, g); vertexOne = g[u].pt;
-			v = target(*ep.first, g); vertexTwo = g[v].pt;
+			u = source(*edge_pair.first, graph); vertexOne = graph[u].pt;
+			v = target(*edge_pair.first, graph); vertexTwo = graph[v].pt;
 			break;
 		}
 		else {
@@ -167,27 +166,14 @@ void randomPoint(const double& totalLength, vector<double>& edgesLinearInterval,
 		}
 	}
 	Point2d plottedPoint;
-	plottedPoint.x = ((1 - t) * g[u].pt.x) + ((t)* g[v].pt.x); cout << "The x is:" << plottedPoint.x << endl;
-	plottedPoint.y = ((1 - t) * g[u].pt.y) + ((t)* g[v].pt.y); cout << "The y is:" << plottedPoint.y << endl;
+	plottedPoint.x = ((1 - t) * graph[u].pt.x) + ((t)* graph[v].pt.x); cout << "The x is:" << plottedPoint.x << endl;
+	plottedPoint.y = ((1 - t) * graph[u].pt.y) + ((t)* graph[v].pt.y); cout << "The y is:" << plottedPoint.y << endl;
 	circle(mapperImage, plottedPoint, 1, CV_RGB(0, 0, 0), 1);
-
-	//imshow("randomPoint.png", mapperImage);
-
-	//vector<Data> cloud{ Data(Point2d(0,0.5)), Data(Point2d(0.1,0.5)), Data(Point2d(0.2,0.5)), Data(Point2d(0,0.4)), Data(Point2d(0.1,0.4)), Data(Point2d(0.2,0.4)), Data(Point2d(0,0.3)), Data(Point2d(0.1,0.3)), Data(Point2d(0.2,0.3)), Data(Point2d(0,0)), Data(Point2d(0,0.1)), Data(Point2d(0,0.2)), Data(Point2d(0.1,0)), Data(Point2d(0.1,0.1)), Data(Point2d(0.1,0.2)), Data(Point2d(0.2,0)), Data(Point2d(0.2,0.1)), Data(Point2d(0.2,0.2)) };
-
-	//Point image_sizes(200, 100);
-
-	//Mat image(image_sizes, CV_8UC3, white);
-
-	//Draw_Cloud(cloud, 2, black, mapperImage);
-
-	//imshow("randomPoint.png", mapperImage);
-
 	waitKey(0);
 
 }
 
-void euclideanGraph(Graph& g) {
+void euclideanGraph(Graph& graph) {
 	Mat mapperImage = Mat::zeros(600, 600, CV_8UC3);
 	mapperImage = cv::Scalar(255, 255, 255);
 	VItr vitr, vend;
@@ -196,27 +182,27 @@ void euclideanGraph(Graph& g) {
 	Point2d vertexOne, vertexTwo, centre;
 	EdgeLinear edgesLinear;
 	double length, totalLength; totalLength = 0;
-	boost::add_edge(0, 1, g);
-	boost::add_edge(1, 2, g);
-	boost::add_edge(2, 3, g);
-	boost::add_edge(3, 1, g);
-	boost::tie(vitr, vend) = boost::vertices(g);
+	boost::add_edge(0, 1, graph);
+	boost::add_edge(1, 2, graph);
+	boost::add_edge(2, 3, graph);
+	boost::add_edge(3, 1, graph);
+	boost::tie(vitr, vend) = boost::vertices(graph);
 	for (; vitr != vend; ++vitr) {
-		g[*vitr].pt.x = Rand();
-		g[*vitr].pt.y = Rand();
-		centre = Point(g[*vitr].pt.x, g[*vitr].pt.y);
+		graph[*vitr].pt.x = Rand();
+		graph[*vitr].pt.y = Rand();
+		centre = Point(graph[*vitr].pt.x, graph[*vitr].pt.y);
 		circle(mapperImage, centre, 1, CV_RGB(255, 0, 0), 6);
-		cout << "The coordinates are:" << g[*vitr].pt.x << " " << g[*vitr].pt.y << endl;
-		vector<Data> cloud{ Data(Point2d(g[*vitr].pt.x,g[*vitr].pt.y)) };
+		cout << "The coordinates are:" << graph[*vitr].pt.x << " " << graph[*vitr].pt.y << endl;
+		vector<Data> cloud{ Data(Point2d(graph[*vitr].pt.x,graph[*vitr].pt.y)) };
 		Draw_Cloud(cloud, 2, black, mapperImage);
 	}
-	EdgePair ep;
+	EdgePair edge_pair;
 	VertexDescriptor u, v;
 	cout << "The lengths are" << endl;
-	for (ep = edges(g); ep.first != ep.second; ++ep.first) {
+	for (edge_pair = edges(graph); edge_pair.first != edge_pair.second; ++edge_pair.first) {
 		// Get the two vertices that are joined by this edge //
-		u = source(*ep.first, g); vertexOne = g[u].pt;
-		v = target(*ep.first, g); vertexTwo = g[v].pt;
+		u = source(*edge_pair.first, graph); vertexOne = graph[u].pt;
+		v = target(*edge_pair.first, graph); vertexTwo = graph[v].pt;
 		length = distanceBetweenTwoPoints(vertexOne, vertexTwo);
 		line(mapperImage, vertexOne, vertexTwo, CV_RGB(0, 0, 255));
 		cout << length << " ";
@@ -227,30 +213,28 @@ void euclideanGraph(Graph& g) {
 	cout << endl << "And here are the sorted edges, by lengths:" << endl;
 	//the program will fail because of the following while loop if all the edges are of length zero
 	edgesLinearInterval.push_back(0);
-	for (EdgeLinear::iterator it = edgesLinear.begin(); it != edgesLinear.end(); ++it) {
+	for (EdgeLinear::iterator linearEdgeIterator = edgesLinear.begin(); linearEdgeIterator != edgesLinear.end(); ++linearEdgeIterator) {
 		//making the linear length line, starting from 0 but making sure that if some edge's length is already 0, then replication of that zero doesnt occur.
-		while (it->second == 0) {
+		while (linearEdgeIterator->second == 0) {
 			continue;
-			++it;
+			++linearEdgeIterator;
 		}
-		totalLength += it->second;
+		totalLength += linearEdgeIterator->second;
 		edgesLinearInterval.push_back(totalLength);
-		cout << it->second << " ";
+		cout << linearEdgeIterator->second << " ";
 	}
 	cout << endl << "And the intervals are:" << endl;
-	for (vector<double>::iterator it = edgesLinearInterval.begin(); it != edgesLinearInterval.end(); ++it) {
-		cout << (*it) << " ";
+	for (vector<double>::iterator linearEdgeIntervalIterator = edgesLinearInterval.begin(); linearEdgeIntervalIterator != edgesLinearInterval.end(); ++linearEdgeIntervalIterator) {
+		cout << (*linearEdgeIntervalIterator) << " ";
 	}
 	cout << endl;
 	cout << endl << "And this is the total length:" << totalLength << endl;
-	imshow("randomPoint.png", mapperImage);
-
-	waitKey(0);
-	randomPoint(totalLength, edgesLinearInterval, edgesLinear, g, mapperImage);
+	write_image("randomPoint.png", mapperImage);
+	randomPoint(totalLength, edgesLinearInterval, edgesLinear, graph, mapperImage);
 }
 
 int main() {
-	Graph g(4);
-	euclideanGraph(g);
+	Graph graph(4);
+	euclideanGraph(graph);
 	waitKey(0);
 }
