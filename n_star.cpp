@@ -51,44 +51,44 @@ int RandEdgeNumber() {
 	return randomCellNumber;
 }
 
-void n_star(Graph& g, int n, Mat& image) {
+void star_graph(Graph& graph, int numRays, Mat& image) {
 	Point image_size = image.size();
 	Point2d image_center(image_size.x / 2, image_size.y / 2);
-	g[0].pt.x = image_center.x;
-	g[0].pt.y = image_center.x;
-	circle(image, g[0].pt, 1, CV_RGB(0, 0,255 ), -1);
-	for (int a = 1; a < n + 1; a++) {
-			g[a].pt.x = image_center.x + 10*cos((2 * PI * ( a - 1 )) / n);
-			g[a].pt.y = image_center.x + 10*sin((2 * PI * ( a - 1 )) / n);
-			circle(image, g[a].pt, 1, CV_RGB(0, 0, 255), -1);
-			cout << a << endl;
-			cout << g[a].pt.x << endl;
-			cout << g[a].pt.y << endl;
+	graph[0].pt.x = image_center.x;
+	graph[0].pt.y = image_center.x;
+	circle(image, graph[0].pt, 1, CV_RGB(0, 0,255 ), -1);
+	for (int rayIterator = 1; rayIterator < numRays + 1; rayIterator++) {
+			graph[rayIterator].pt.x = image_center.x + 10*cos((2 * PI * ( rayIterator - 1 )) / numRays);
+			graph[rayIterator].pt.y = image_center.x + 10*sin((2 * PI * ( rayIterator - 1 )) / numRays);
+			circle(image, graph[rayIterator].pt, 1, CV_RGB(0, 0, 255), -1);
+			cout << rayIterator << endl;
+			cout << graph[rayIterator].pt.x << endl;
+			cout << graph[rayIterator].pt.y << endl;
 	}
 }
 
-void addEdges(Graph& g, int n, Mat& image) {
-	int i = 1;
-	while(i < n + 1 ) {
-		add_edge(0, i, g);
+void addEdges(Graph& graph, int numRays, Mat& image) {
+	int rayIterator = 1;
+	while(rayIterator < numRays + 1 ) {
+		add_edge(0, rayIterator, graph);
 		cout << endl << "An edge has been added" << endl;
-		line(image, g[0].pt, g[i].pt, CV_RGB(0, 255, 255));
-		i++;
+		line(image, graph[0].pt, graph[rayIterator].pt, CV_RGB(0, 255, 255));
+		rayIterator++;
 	}
 	write_image("Star.png", image);
 }
 
 int main() {
 	srand(time(NULL));
-	cout << "Enter the n: " << endl;
-	int n;
-	cin >> n;
+	cout << "Enter the number of rays: " << endl;
+	int numRays;
+	cin >> numRays;
 	Point2d shift; int imageSize; double scale;
-	cout << "Enter the image size:" << endl; cin >> imageSize;
+	cout << "Enter the image size: " << endl; cin >> imageSize;
 	Mat mapperImage = Mat::zeros(imageSize, imageSize, CV_8UC3);
 	mapperImage = cv::Scalar(255, 255, 255);
-	Graph g(n + 1);
-	n_star(g, n, mapperImage);
-	addEdges(g, n, mapperImage);
+	Graph graph(numRays + 1);
+	star_graph(graph, numRays, mapperImage);
+	addEdges(graph, numRays, mapperImage);
 	return(0);
 }
