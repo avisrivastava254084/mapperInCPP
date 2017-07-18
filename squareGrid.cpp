@@ -50,38 +50,38 @@ int RandEdgeNumber() {
     return randomCellNumber;
 }
     
-void euclideanVertices(Graph& g, int m, int n) {
-	int a = 0;
+void euclideanVertices(Graph& graph, int size_m, int size_n) {
+	int vertex_iterator = 0;
 	Mat aviImage = Mat::zeros(600, 600, CV_8UC3);
 	aviImage = cv::Scalar(255,255,255);
-	for(int i = 0; i <= m; i++) {
-		for(int j = 0; j <= n; j++) {
-			g[a].pt.x = i;
-			g[a].pt.y = j;
-			g[a].name = a;
-			a++;
+	for(int x_axis_iterator = 0; x_axis_iterator <= size_m; x_axis_iterator++) {
+		for(int y_axis_iterator = 0; y_axis_iterator <= size_n; y_axis_iterator++) {
+			g[vertex_iterator].pt.x = x_axis_iterator;
+			g[vertex_iterator].pt.y = y_axis_iterator;
+			g[vertex_iterator].name = vertex_iterator;
+			vertex_iterator++;
 			//circle( aviImage, g[a].pt, 1, CV_RGB(0,255,0), 3 );
 		}
 	}
 	//write_image("aviImage.png", aviImage);
 }
 
-void addEdges(Graph& g, int m, int n) {
-	int i, j;
+void addEdges(Graph& graph, int size_m, int size_n) {
+	int vertex_iterator, j;
 	//adding edges vertically
-	for (i = 0; i < (( m + 1 ) * ( n )); i++) { 
-		add_edge(i, i+(m+1), g);
-		cout<<endl<<"A vertical edge has been added in:"<<i<<" "<<i+m+1<<endl;
+	for (vertex_iterator = 0; vertex_iterator < (( size_m + 1 ) * ( size_n )); vertex_iterator++) { 
+		add_edge(vertex_iterator, vertex_iterator+(size_m+1), graph);
+		cout<<endl<<"A vertical edge has been added in: "<<vertex_iterator<<" "<<vertex_iterator+size_m+1<<endl;
 	}
-	int breadthLimit = m;
+	int breadthLimit = size_m;
 	//adding edges horizontally
-	for (i = 0; i < ((m+1) * (n+1) - 1); i++) {
-		if ( i == breadthLimit) {
-			breadthLimit += (m+1);
+	for (vertex_iterator = 0; vertex_iterator < ((size_m+1) * (size_n+1) - 1); vertex_iterator++) {
+		if ( vertex_iterator == breadthLimit) {
+			breadthLimit += (size_m+1);
 			continue;
 		}
-		add_edge(i, (i + 1), g);
-		cout<<endl<<"A horizontal edge has been added in:"<<i<<" "<<i+1<<endl;
+		add_edge(vertex_iterator, (vertex_iterator + 1), graph);
+		cout<<endl<<"A horizontal edge has been added in:"<<vertex_iterator<<" "<<vertex_iterator+1<<endl;
 	}
 }
 
@@ -132,11 +132,11 @@ void Draw_Cloud (Graph const& cloud, int radius, Scalar color, Mat& image, doubl
 int main() {
 	srand(time(NULL));
 	cout << "Enter the m and n:" << endl;
-	int m, n;
-	cin >> m >> n;
-	Graph g((m+1)*(n+1));
-	euclideanVertices(g, m, n);
-	addEdges(g, m, n);
+	int size_m, size_n;
+	cin >> size_m >> size_n;
+	Graph graph((size_m+1)*(size_n+1));
+	euclideanVertices(graph, size_m, size_n);
+	addEdges(graph, size_m, size_n);
 	Point2d shift; int imageSize; double scale; 
 	cout<<"Enter the image size:"<<endl; cin >> imageSize;
 	Mat mapperImage = Mat::zeros(imageSize, imageSize, CV_8UC3);
