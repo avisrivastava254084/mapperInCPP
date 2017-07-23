@@ -12,99 +12,94 @@ using namespace std;
 using namespace cv;
 
 struct VertexProperty {
-  char name;
-  Point2d pt;
+	char name;
+	Point2d pt;
 };
 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, VertexProperty> Graph;
-typedef boost::graph_traits<Graph>::vertex_iterator VItr;
-typedef boost::graph_traits<Graph>::edge_iterator EItr;
+typedef boost::graph_traits<Graph>::vertex_iterator Vertex_Itr;
+typedef boost::graph_traits<Graph>::edge_iterator Edge_Itr;
 typedef boost::graph_traits<Graph>::adjacency_iterator adjacency_iterator;
 typedef boost::property_map<Graph, boost::vertex_index_t>::type IndexMap;
 
 void write_image(String const& name, Mat const& mapperImage) {
-  try {
-    cv::imwrite(name, mapperImage);
-  } catch (std::runtime_error& ex) {
-    fprintf(stderr, "Error in writing the image\n", ex.what());
-  }
+	try {
+		cv::imwrite(name, mapperImage);
+	}
+	catch (std::runtime_error& ex) {
+		fprintf(stderr, "Error in writing the image\n", ex.what());
+	}
 }
 
 double Rand() { return 10 * (double)rand() / RAND_MAX; }
-/*
-adjacency_list<OutEdgeContainer, VertexContainer, Directedness,
-               VertexProperties, EdgeProperties,
-               GraphProperties, EdgeList>
-*/
 
-void drawGraph(Graph g, int size, Mat const& mapperImage){
-    Graph copy = g;
-    VItr vitr, vend;
-    Point vertexOne, vertexTwo;
-	boost::tie(vitr, vend) = boost::vertices(copy);
-	IndexMap index = get(boost::vertex_index, copy);
-    int i = 0;
-    for (; vitr != vend; ++vitr) {
-		vertexOne = Point(g[*vitr].pt.x, g[*vitr].pt.y);
-		cout << "Neighbours of " << i << " are:";
-		std::pair<adjacency_iterator, adjacency_iterator> neighbors = boost::adjacent_vertices(vertex(i, copy), copy);
+void drawGraph(Graph graph, int size, Mat const& mapperImage) {
+	Graph graphCopy = graph;
+	Vertex_Itr vitr, vend;
+	Point vertexOne, vertexTwo;
+	boost::tie(vitr, vend) = boost::vertices(graphCopy);
+	IndexMap index = get(boost::vertex_index, graphCopy);
+	int currentVertex = 0;
+	for (; vitr != vend; ++vitr) {
+		vertexOne = Point(graph[*vitr].pt.x, graph[*vitr].pt.y);
+		cout << "Neighbours of " << currentVertex << " are:";
+		std::pair<adjacency_iterator, adjacency_iterator> neighbors = boost::adjacent_vertices(vertex(currentVertex, graphCopy), graphCopy);
 		for (; neighbors.first != neighbors.second; ++neighbors.first) {
-			vertexTwo = Point(g[*neighbors.first].pt.x, g[*neighbors.first].pt.y);
+			vertexTwo = Point(graph[*neighbors.first].pt.x, graph[*neighbors.first].pt.y);
 			line(mapperImage, vertexOne, vertexTwo, CV_RGB(0, 0, 0));
 			std::cout << index[*neighbors.first] << " ";
-    }
-    cout << endl;
-    i++;
-  }
-  write_image("scaledGraph.png", mapperImage);
+		}
+		cout << endl;
+		currentVertex++;
+	}
+	write_image("scaledGraph.png", mapperImage);
 }
 
-void scalingCloud(Graph g, int size, Mat const& mapperImage) {
-  Point2d vertexOne;
-  float x_min, y_min = +9999999999999.00;
-  float x_max, y_max = -9999999999999.00;
-  Graph copy = g;
-  IndexMap index = get(boost::vertex_index, copy);
-  VItr vitr, vend;
-  boost::tie(vitr, vend) = boost::vertices(copy);
-  for (; vitr != vend; ++vitr) {
-    if (copy[*vitr].pt.x < x_min) x_min = copy[*vitr].pt.x;
-    if (copy[*vitr].pt.x > x_max) x_max = copy[*vitr].pt.x;
-    if (copy[*vitr].pt.y < y_min) y_min = copy[*vitr].pt.y;
-    if (copy[*vitr].pt.y > y_max) y_max = copy[*vitr].pt.y;
-  }
-  float scalingFactor = max(x_max - x_min, y_max - y_min);
-  scalingFactor = size / scalingFactor;
-  boost::tie(vitr, vend) = boost::vertices(copy);
-  for (; vitr != vend; ++vitr) {
-    g[*vitr].pt.x *= scalingFactor;
-    g[*vitr].pt.y *= scalingFactor;
-    vertexOne = Point(g[*vitr].pt.x, g[*vitr].pt.y);
-    circle(mapperImage, vertexOne, 1, CV_RGB(255,0,0), 1);
-  }
-  drawGraph(copy, 500, mapperImage);
+void scalingCloud(Graph graph, int size, Mat const& mapperImage) {
+	Point2d vertexOne;
+	float x_min, y_min = +9999999999999.00;
+	float x_max, y_max = -9999999999999.00;
+	Graph graphCopy = graph;
+	IndexMap index = get(boost::vertex_index, graphCopy);
+	Vertex_Itr vitr, vend;
+	boost::tie(vitr, vend) = boost::vertices(graphCopy);
+	for (; vitr != vend; ++vitr) {
+		if (graphCopy[*vitr].pt.x < x_min) x_min = graphCopy[*vitr].pt.x;
+		if (graphCopy[*vitr].pt.x > x_max) x_max = graphCopy[*vitr].pt.x;
+		if (graphCopy[*vitr].pt.y < y_min) y_min = graphCopy[*vitr].pt.y;
+		if (graphCopy[*vitr].pt.y > y_max) y_max = graphCopy[*vitr].pt.y;
+	}
+	float scalingFactor = max(x_max - x_min, y_max - y_min);
+	scalingFactor = size / scalingFactor;
+	boost::tie(vitr, vend) = boost::vertices(graphCopy);
+	for (; vitr != vend; ++vitr) {
+		graph[*vitr].pt.x *= scalingFactor;
+		graph[*vitr].pt.y *= scalingFactor;
+		vertexOne = Point(graph[*vitr].pt.x, graph[*vitr].pt.y);
+		circle(mapperImage, vertexOne, 1, CV_RGB(255, 0, 0), 1);
+	}
+	drawGraph(graphCopy, 500, mapperImage);
 }
 
-void euclideanGraph(Graph& g){
-  boost::add_edge(0, 1, g);
-  boost::add_edge(1, 2, g);
-  boost::add_edge(2, 3, g);
-  boost::add_edge(3, 1, g);
-  VItr vitr, vend;
-  boost::tie(vitr, vend) = boost::vertices(g);
-  int i = 0;
-  for (; vitr != vend; ++vitr) {
-    g[*vitr].pt.x = Rand();
-    g[*vitr].pt.y = Rand();
-  }
+void euclideanGraph(Graph& graph) {
+	boost::add_edge(0, 1, graph);
+	boost::add_edge(1, 2, graph);
+	boost::add_edge(2, 3, graph);
+	boost::add_edge(3, 1, graph);
+	Vertex_Itr vitr, vend;
+	boost::tie(vitr, vend) = boost::vertices(graph);
+	int i = 0;
+	for (; vitr != vend; ++vitr) {
+		graph[*vitr].pt.x = Rand();
+		graph[*vitr].pt.y = Rand();
+	}
 }
 
 int main() {
-  Graph g;
-  euclideanGraph(g);
-  Mat mapperImage = Mat::zeros(400, 400, CV_8UC3);
-  mapperImage = cv::Scalar(255, 255, 255);
-  scalingCloud(g, 400, mapperImage);
-  return 0;
+	Graph graph;
+	euclideanGraph(graph);
+	Mat mapperImage = Mat::zeros(400, 400, CV_8UC3);
+	mapperImage = cv::Scalar(255, 255, 255);
+	scalingCloud(graph, 400, mapperImage);
+	return 0;
 }
-
