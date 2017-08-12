@@ -97,7 +97,7 @@ void euclideanGraph(Graph& g, Mat& mapperImage) {
 	}*/
 }
 
-void euclideanGraphConnected(Graph& g, Mat& mapperImage, VectorPoint2d connectedComponent) {
+void euclideanGraphConnected(Graph& connectedGraph, Mat& mapperImage, VectorPoint2d connectedComponent) {
 	srand(time(NULL));
 	VItr vitr, vend;
 	vector<double> edgesLinearInterval;
@@ -108,32 +108,32 @@ void euclideanGraphConnected(Graph& g, Mat& mapperImage, VectorPoint2d connected
 	cout << "Now, keep on adding edges, when done, enter -1." << endl;
 	int itr = 0;
 
-	boost::tie(vitr, vend) = boost::vertices(g);
+	boost::tie(vitr, vend) = boost::vertices(connectedGraph);
 	for (; vitr != vend; ++vitr) {
-		g[*vitr].pt.x = connectedComponent[itr].x;
-		g[*vitr].pt.y = connectedComponent[itr].x;
+		connectedGraph[*vitr].pt.x = connectedComponent[itr].x;
+		connectedGraph[*vitr].pt.y = connectedComponent[itr].x;
 		//centre = Point(g[*vitr].pt.x, g[*vitr].pt.y);
 		//circle(mapperImage, centre, 1, CV_RGB(255,0,0), 6);
-		cout << "The coordinates are:" << g[*vitr].pt.x << " " << g[*vitr].pt.y << endl;
+		cout << "The coordinates are:" << connectedGraph[*vitr].pt.x << " " << connectedGraph[*vitr].pt.y << endl;
 		itr++;
 	}
 }
 
 
-void Bounding_Box_Graph(Graph const& graph, std::pair<Point2d, Point2d>& graph_box) {
-	graph_box.first = Point2d(big_constant, big_constant);
-	graph_box.second = Point2d(-big_constant, -big_constant);
+void Bounding_Box_Graph(Graph const& graph, std::pair<Point2d, Point2d>& box) {
+	box.first = Point2d(big_constant, big_constant);
+	box.second = Point2d(-big_constant, -big_constant);
 	VItr vitr, vend;
 	boost::tie(vitr, vend) = boost::vertices(graph);
 	for (; vitr != vend; ++vitr) {
-		if (graph_box.first.x > graph[*vitr].pt.x) graph_box.first.x = graph[*vitr].pt.x;
-		if (graph_box.first.y > graph[*vitr].pt.y) graph_box.first.y = graph[*vitr].pt.y;
-		if (graph_box.second.x < graph[*vitr].pt.x) graph_box.second.x = graph[*vitr].pt.x;
-		if (graph_box.second.y < graph[*vitr].pt.y) graph_box.second.y = graph[*vitr].pt.y;
+		if (box.first.x > graph[*vitr].pt.x) box.first.x = graph[*vitr].pt.x;
+		if (box.first.y > graph[*vitr].pt.y) box.first.y = graph[*vitr].pt.y;
+		if (box.second.x < graph[*vitr].pt.x) box.second.x = graph[*vitr].pt.x;
+		if (box.second.y < graph[*vitr].pt.y) box.second.y = graph[*vitr].pt.y;
 	}
 }
 
-void Bounding_Box_Cloud(Graph const& cloud, std::pair<Point2d, Point2d>& cloud_box) {
+/*void Bounding_Box_Cloud(Graph const& cloud, std::pair<Point2d, Point2d>& cloud_box) {
 	cloud_box.first = Point2d(big_constant, big_constant);
 	cloud_box.second = Point2d(-big_constant, -big_constant);
 	VItr vitr, vend;
@@ -144,14 +144,18 @@ boost:tie(vitr, vend) = boost::vertices(cloud);
 		if (cloud_box.second.x < cloud[*vitr].pt.x) cloud_box.second.x = cloud[*vitr].pt.x;
 		if (cloud_box.second.y < cloud[*vitr].pt.y) cloud_box.second.y = cloud[*vitr].pt.y;
 	}
-}
+}*/
 
-void Scaling_Parameters_Graph(Graph const& graph, Point image_sizes, double& scale, Point2d& shift) {
-	std::pair<Point2d, Point2d> box;
-	Bounding_Box_Graph(graph, box);
+void Scaling_Parameters_Graph(Graph const& graph, Point image_sizes, double& scale, Point2d& shift, std::pair<Point2d, Point2d>& box) {
+	//std::pair<Point2d, Point2d> box;
+	/*if (counter != 0) {
+		Bounding_Box_Graph(graph, box);
+		counter -= 1;
+	}*/
 	Point2d graph_sizes(box.second.x - box.first.x, box.second.y - box.first.y);
 	Point2d graph_center(box.second.x + box.first.x, box.second.y + box.first.y);
 	graph_center /= 2;
+	
 	Point2d image_center(image_sizes.x / 2, image_sizes.y / 2);
 	scale = std::min(image_sizes.x / graph_sizes.x, image_sizes.y / graph_sizes.y);
 	// transformation: point -> scale * ( point - cloud_center ) + image_center
@@ -160,9 +164,9 @@ void Scaling_Parameters_Graph(Graph const& graph, Point image_sizes, double& sca
 
 // Draw a scaled cloud to the image of a given size
 
-void Draw_Graph(Graph const& graph, int radius, Scalar color, Mat& image, double& scale, Point2d& shift, String name) {
+void Draw_Graph(Graph const& graph, int radius, Scalar color, Mat& image, double& scale, Point2d& shift, String name, std::pair<Point2d, Point2d>& box) {
 	//cout << endl << "Now, we will be plotting the given boost graph:" << endl;
-	Scaling_Parameters_Graph(graph, image.size(), scale, shift);
+	Scaling_Parameters_Graph(graph, image.size(), scale, shift, box);
 	VItr vitr, vend;
 boost:tie(vitr, vend) = boost::vertices(graph);
 	VertexDescriptor u, v; EdgePair ep; Point2d vertexOne, vertexTwo;
@@ -178,6 +182,8 @@ boost:tie(vitr, vend) = boost::vertices(graph);
 		circle(image, Point(scale * graph[*vitr].pt + shift), radius, color, -1);
 	}
 	write_image(name, image);
+	imshow(name, image);
+	waitKey(0);
 }
 
 void neighbourHoodGraph(Graph& randomGraph, double threshold, VectorPoint2d& connectedComponent) {
@@ -229,30 +235,35 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold, VectorPoint2d& con
 		}
 	}
 	cout << "connected components: " << connectedComponent << endl;
+	//cout << "connected components size: " << connectedGraphSize << endl;
 
 }
 
 int main() {
 	cout << endl << "Please enter the total number of vertices in the boost graph:" << endl;
 	int numberOfVertices; cin >> numberOfVertices;
-	Graph g(numberOfVertices);
+	Graph graph(numberOfVertices);
 	VectorPoint2d connectedComponent;
-	Mat cloudImage = Mat::zeros(600, 600, CV_8UC3); cloudImage = cv::Scalar(255, 255, 255);
+	//Mat cloudImage = Mat::zeros(600, 600, CV_8UC3); cloudImage = cv::Scalar(255, 255, 255);
 	Mat graphImage = Mat::zeros(600, 600, CV_8UC3); graphImage = cv::Scalar(255, 255, 255);
-	int randomCloudSize; cout << endl << "Please enter the size of the random cloud that you want to generate" << endl; cin >> randomCloudSize;
-	euclideanGraph(g, graphImage);
+	//int randomCloudSize; cout << endl << "Please enter the size of the random cloud that you want to generate" << endl; cin >> randomCloudSize;
+	euclideanGraph(graph, graphImage);
 	//euclideanCloud(randomGraph, RandomPoints, randomCloudSize, cloudImage);
 	double scaleGraph; Point2d shiftGraph;
-	Draw_Graph(g, 4, CV_RGB(255, 0, 0), graphImage, scaleGraph, shiftGraph, "scaledBoostGraph.png");
+	//Draw_Graph(graph, 4, CV_RGB(255, 0, 0), graphImage, scaleGraph, shiftGraph, "scaledBoostGraph.png", box);
 	cout << endl << "Please enter the threshold: " << endl;
 	double threshold; cin >> threshold;
 	int connectedGraphSize;
-	neighbourHoodGraph(g, threshold, connectedComponent);
+	neighbourHoodGraph(graph, threshold, connectedComponent);
 	connectedGraphSize = connectedComponent.size();
 	cout << "size: " << connectedGraphSize << endl;
+
+	std::pair<Point2d, Point2d> box;
+	Bounding_Box_Graph(graph, box);
+
+	Draw_Graph(graph, 4, CV_RGB(255, 0, 0), graphImage, scaleGraph, shiftGraph, "scaledBoostGraph.png", box);
 	Graph connectedGraph(connectedGraphSize);
-	Draw_Graph(g, 4, CV_RGB(255, 0, 0), graphImage, scaleGraph, shiftGraph, "scaledBoostGraph.png");
 	euclideanGraphConnected(connectedGraph, graphImage, connectedComponent);
-	Draw_Graph(connectedGraph, 6, CV_RGB(255, 0, 255), graphImage, scaleGraph, shiftGraph, "newImage.png");
+	Draw_Graph(connectedGraph, 6, CV_RGB(0, 0, 255), graphImage, scaleGraph, shiftGraph, "newImage.png", box);
 	
 }
