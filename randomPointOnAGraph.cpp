@@ -7,7 +7,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <math.h>
-
+#include <boost/graph/connected_components.hpp>
 
 #define big_constant 1e+64
 
@@ -263,6 +263,30 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold) {
 		}
 	}
 }
+void findNoOfComponents(const Graph& randomGraph, const int& randomCloudSize, int& numOfComponents) {
+	vector<int> component(num_vertices(randomGraph));
+	int componenNum, itr_j;
+	numOfComponents = connected_components(randomGraph, &component[0]);
+	int componentArr[numOfComponents][randomCloudSize] = {0};
+	std::vector<int>::size_type itr_i;
+	cout << "Total number of components: " << numOfComponents << endl;
+	for (itr_i = 0; itr_i != component.size(); ++itr_i) {
+		cout << "vertes " << i << " is in component: " << component[i] << endl;
+	}
+	for (itr_i = 0; itr_i != num_vertices(randomGraph); ++itr_i) {
+		componentNum = component[itr_i];
+		componentArr[componentNum][itr_i] = 1;
+	}
+	for (itr_i = 0; itr_i < numOfComponents; itr_i++) {
+		cout << "In component " << itr_i << ": ";
+		for (itr_j = 0; itr_j < randomCloudSize; itr_j++) {
+			if (componentArr[itr_i][itr_j] == 1) {
+				cout << itr_j << " ";
+			}
+		}
+		cout << endl;
+	}
+}
 
 int main() {
 	cout << endl << "Please enter the total number of vertices in the boost graph:" << endl;
@@ -280,5 +304,6 @@ int main() {
 	cout << endl << "Please enter the threshold:" << endl;
 	double threshold; cin >> threshold;
 	neighbourHoodGraph(randomGraph, threshold);
+	findNoOfComponents(randomGraph, randomCloudSize, numOfComponents);
 	Draw_Graph(randomGraph, 4, CV_RGB(255, 0, 0), cloudImage, scaleGraph, shiftGraph, "scaledRandomCloudGraph.png");
 }
