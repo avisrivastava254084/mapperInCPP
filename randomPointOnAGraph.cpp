@@ -267,26 +267,24 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold) {
 }
 
 void findNoOfComponents(const Graph& graph, const int& vertexCount) {
-	vector<int> component(num_vertices(graph)); int c, j;
-    int num = connected_components(graph, &component[0]); int componentArr[num][vertexCount] = {0};
+    vector<int> component(num_vertices(graph)); int c;
+    int num = connected_components(graph, &component[0]); vector<int> componentArr[num];
     std::vector<int>::size_type i;
     cout << "Total number of components: " << num << endl;
     for (i = 0; i != component.size(); ++i)
       cout << "Vertex " << i <<" is in component " << component[i] << endl;
-  	for (i = 0; i != component.size(); ++i){
-  		c = component[i];
-  		componentArr[c][i] = 1;
+    for (i = 0; i != component.size(); ++i){
+  	c = component[i];
+  	componentArr[c].push_back(i);
+    }
+    for(i = 0; i<num;i++){
+	cout<<"In component "<<i<<": ";
+  	for(vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++){
+		cout << *Itr << " ";
   	}
-  	for(i = 0; i<num;i++){
-  		cout<<"In component "<<i<<": ";
-  		for(j = 0;j<vertexCount;j++){
-  			if(componentArr[i][j] == 1){
-  				cout<<j<<" ";
-  			}
-  		}
-  		cout<<endl;
-  	}
-  }
+  	cout<<endl;
+    }
+}
 
 int main() {
 	cout << endl << "Please enter the total number of vertices in the boost graph:" << endl;
