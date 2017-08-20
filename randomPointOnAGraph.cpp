@@ -1,13 +1,15 @@
 #include <iostream>
+
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/adjacency_iterator.hpp>
+#include <boost/graph/connected_components.hpp>
+
 #include <vector>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <math.h>
-
 
 #define big_constant 1e+64
 
@@ -264,6 +266,28 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold) {
 	}
 }
 
+void findNoOfComponents(const Graph& graph, const int& vertexCount) {
+	vector<int> component(num_vertices(graph)); int c, j;
+    int num = connected_components(graph, &component[0]); int componentArr[num][vertexCount] = {0};
+    std::vector<int>::size_type i;
+    cout << "Total number of components: " << num << endl;
+    for (i = 0; i != component.size(); ++i)
+      cout << "Vertex " << i <<" is in component " << component[i] << endl;
+  	for (i = 0; i != component.size(); ++i){
+  		c = component[i];
+  		componentArr[c][i] = 1;
+  	}
+  	for(i = 0; i<num;i++){
+  		cout<<"In component "<<i<<": ";
+  		for(j = 0;j<vertexCount;j++){
+  			if(componentArr[i][j] == 1){
+  				cout<<j<<" ";
+  			}
+  		}
+  		cout<<endl;
+  	}
+  }
+
 int main() {
 	cout << endl << "Please enter the total number of vertices in the boost graph:" << endl;
 	int numberOfVertices; cin >> numberOfVertices;
@@ -281,4 +305,5 @@ int main() {
 	double threshold; cin >> threshold;
 	neighbourHoodGraph(randomGraph, threshold);
 	Draw_Graph(randomGraph, 4, CV_RGB(255, 0, 0), cloudImage, scaleGraph, shiftGraph, "scaledRandomCloudGraph.png");
+	findNoOfComponents(randomGraph, randomCloudSize);
 }
