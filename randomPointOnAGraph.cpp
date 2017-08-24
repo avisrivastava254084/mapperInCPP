@@ -243,6 +243,7 @@ boost:tie(vitr, vend) = boost::vertices(graph);
 	}
 	for (; vitr != vend; ++vitr) {
 		cout << endl << "This will be the circle plotted vertices' indices wise:" << graph[*vitr].pt << endl;
+		cout<<"This is the scale that is being applied to the above point " << scale << endl; 
 		cout << endl << "Vertex plotted at:" << (scale * graph[*vitr].pt + shift) << endl;
 		circle(image, Point(scale * graph[*vitr].pt + shift), radius, color, -1);
 	}
@@ -268,23 +269,115 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold) {
 
 void findNoOfComponents(const Graph& graph, const int& vertexCount) {
     vector<int> component(num_vertices(graph)); int c;
-    int num = connected_components(graph, &component[0]); vector<int> componentArr[num];
+    Mat componentImage = Mat::zeros(600, 600, CV_8UC3); componentImage = cv::Scalar(255, 255, 255);
+    double scaleComponentGraph; Point2d shiftComponentGraph;
+    int componentCount = connected_components(graph, &component[0]); 
+    vector<int> componentArr[componentCount];
+
     std::vector<int>::size_type i;
-    cout << "Total number of components: " << num << endl;
+    cout << "Total number of components: " << componentCount << endl;
     for (i = 0; i != component.size(); ++i)
       cout << "Vertex " << i <<" is in component " << component[i] << endl;
     for (i = 0; i != component.size(); ++i){
   	c = component[i];
   	componentArr[c].push_back(i);
     }
-    for(i = 0; i<num;i++){
+    for(i = 0; i<componentCount;i++){
 	cout<<"In component "<<i<<": ";
   	for(vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++){
 		cout << *Itr << " ";
   	}
   	cout<<endl;
     }
+    cout<<"In the function of components and computing the subgraphs"<<endl;
+    cout<<"---------------------------------------------------------"<<endl;
+    vector<int> currentComponent; int vertexOne, vertexTwo; Graph componentsGraph[componentCount];
+	cout<<"Going to iterate through all the components"<<endl;
+	for(int c = 0; c < componentCount; c++) {
+		int size, i; i = 0;
+		cout<<"Currently in the component "<< c << endl;
+		currentComponent = componentArr[c]; size = currentComponent.size();
+		cout<<"This is the size of the current component: "<<size<<endl;
+		Graph componentGraph(size);
+		cout<<"Current component vector has copied the current component under iteration"<<endl;
+		cout<<"Now, we are adding the vertex attributes for all this particular component." << endl;
+		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end() && (i < size); ++it) {
+			cout<<"This is the value of it"<<(*it)<<endl;
+			componentGraph[i].pt.x = graph[*it].pt.x;
+			componentGraph[i].pt.y = graph[*it].pt.y;
+			cout<<"These are the coordinates:"<<componentGraph[i].pt<<endl;
+			i++;
+		}
+		cout << "Now, we are adding edges in the subgraph, i.e. the current component." << endl;
+		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end(); ++it) {
+			for(std::vector<int>::iterator jt = it+1; jt != currentComponent.end(); ++jt) {
+				cout<<"The values of it and jt are:" << *it << " " << *jt << endl;
+				vertexOne = currentComponent[*it]; vertexTwo = currentComponent[*jt];
+				if(edge(vertexOne, vertexTwo, graph).second) {
+					add_edge(vertexOne, vertexTwo, componentGraph);
+					cout<<"An edge has been added in the subgraph as well between:" << vertexOne << " and " << vertexTwo << endl;
+				}
+			}
+		}
+		if(c == 0){ 
+			Draw_Graph(componentGraph,4, CV_RGB(255, 0, 0), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
+		}
+		if(c > 0 && c < 3){
+			Draw_Graph(componentGraph,4, CV_RGB(155, 50, 50), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
+		}
+		if(c >= 3 && c < 6){
+			Draw_Graph(componentGraph,4, CV_RGB(125, 65, 65), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
+		}
+		if(c >= 6 && c < 8) {
+			Draw_Graph(componentGraph,4, CV_RGB(100, 85, 70), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
+		}
+		if(c >= 8){
+			Draw_Graph(componentGraph,4, CV_RGB(0, 50, 150), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
+		}
+		
+
+		/*
+		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end(); ++it) {
+			int size = currentComponent.size();
+			cout<<"This is the size of the current component"<<size<<endl;
+			Graph componentGraph(size);
+			cout << "Subgraph under this iteration of the above size is created."<<endl;
+			cout << "This is the value at it:" << (*it) << endl;
+			if(it++ != currentComponent.end()) {
+				vertexOne = currentComponent[*it]; vertexTwo = currentComponent[*it++];
+				if(edge(vertexOne, vertexTwo, graph).second) {
+					add_edge(vertexOne, vertexTwo, componentGraph);
+					cout<<"An edge has been added in the subgraph as well.";
+				}
+			}
+		}*/
+	}
 }
+
+/*
+void drawComponents(const Graph& graph, const int& componentCount, const int& vertexCount) {
+	vector<int> componentArr[] = findNoOfComponents();
+	vector<int> currentComponent; int vertexOne, vertexTwo; Graph componentsGraph[componentCount];
+	for(int c = 0; c < componentCount; c++) {
+		currentComponent = componentArr[c];
+		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end(); ++it) {
+			int size = currentComponent.size();
+			Graph componentGraph(size);
+			for(int i = 0; i < size; i++) {
+				componentGraph[i].pt.x = graph[*it].pt.x;
+				componentGraph[i].pt.y = graph[*it].pt.y;
+			}
+			if(it++ != currentComponent.end()) {
+				vertexOne = currentComponent[*it]; vertexTwo = currentComponent[*it++];
+				if(edge(vertexOne, vertexTwo, graph).second) {
+					add_edge(vertexOne, vertexTwo, componentGraph);
+				}
+			}
+		}
+	}
+
+}
+*/
 
 int main() {
 	cout << endl << "Please enter the total number of vertices in the boost graph:" << endl;
