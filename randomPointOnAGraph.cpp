@@ -211,6 +211,9 @@ void Scaling_Parameters_Graph(Graph const& graph, Point image_sizes, double& sca
 	graph_center /= 2;
 	Point2d image_center(image_sizes.x / 2, image_sizes.y / 2);
 	scale = std::min(image_sizes.x / graph_sizes.x, image_sizes.y / graph_sizes.y);
+	if(isinf(scale)) {
+		scale = std::min(image_sizes.x, image_sizes.y);
+	}
 	// transformation: point -> scale * ( point - cloud_center ) + image_center
 	shift = image_center - scale * graph_center;
 }
@@ -233,12 +236,12 @@ void Draw_Graph(Graph const& graph, int radius, Scalar color, Mat& image, double
 	cout << endl << "Now, we will be plotting the given boost graph:" << endl;
 	Scaling_Parameters_Graph(graph, image.size(), scale, shift);
 	VItr vitr, vend;
-boost:tie(vitr, vend) = boost::vertices(graph);
+	boost:tie(vitr, vend) = boost::vertices(graph);
 	VertexDescriptor u, v; EdgePair ep; Point2d vertexOne, vertexTwo;
 	for (ep = edges(graph); ep.first != ep.second; ++ep.first) {
 		u = source(*ep.first, graph); vertexOne = scale * graph[u].pt + shift;
 		v = target(*ep.first, graph); vertexTwo = scale * graph[v].pt + shift;
-		cout << endl << "A line will be plotted on these:" << vertexOne << " " << vertexTwo << endl;
+		//cout << endl << "A line will be plotted on these:" << vertexOne << " " << vertexTwo << endl;
 		line(image, vertexOne, vertexTwo, CV_RGB(0, 0, 255));
 	}
 	for (; vitr != vend; ++vitr) {
@@ -258,7 +261,7 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold) {
 	for (; vitr != vend; ++vitr) {
 		for (vitr2 = vitr + 1; vitr2 != vend2; ++vitr2) {
 			distance = distanceBetweenTwoPoints(randomGraph[*vitr].pt, randomGraph[*vitr2].pt);
-			cout << endl << "The distance between " << randomGraph[*vitr].pt << " " << randomGraph[*vitr2].pt << " is: " << distance << endl;
+			//cout << endl << "The distance between " << randomGraph[*vitr].pt << " " << randomGraph[*vitr2].pt << " is: " << distance << endl;
 			if (distance <= threshold) {
 				add_edge(*vitr, *vitr2, randomGraph);
 				cout << endl << "An edge has been added to the vertices : " << randomGraph[*vitr].pt << " and " << randomGraph[*vitr2].pt << endl;
@@ -267,9 +270,30 @@ void neighbourHoodGraph(Graph& randomGraph, double threshold) {
 	}
 }
 
-void findNoOfComponents(const Graph& graph, const int& vertexCount) {
+void Draw_Component(Graph const& component, int radius, Scalar color, Mat& image, double& scale, Point2d& shift, String name) {
+	cout << endl << "Now, we will be plotting the component:" << endl;
+	VItr vitr, vend;
+	boost:tie(vitr, vend) = boost::vertices(component);
+	VertexDescriptor u, v; EdgePair ep; Point2d vertexOne, vertexTwo;
+	for (ep = edges(component); ep.first != ep.second; ++ep.first) {
+		u = source(*ep.first, component); vertexOne = scale * component[u].pt + shift;
+		v = target(*ep.first, component); vertexTwo = scale * component[v].pt + shift;
+		cout << endl << "A line will be plotted on these:" << vertexOne << " " << vertexTwo << endl;
+		line(image, vertexOne, vertexTwo, CV_RGB(0, 0, 255));
+	}
+	for (; vitr != vend; ++vitr) {
+		cout << endl << "This will be the circle plotted vertices' indices wise:" << component[*vitr].pt << endl;
+		cout<<"This is the scale that is being applied to the above point " << scale << endl; 
+		cout << endl << "Vertex plotted at:" << (scale * component[*vitr].pt + shift) << endl;
+		circle(image, Point(scale * component[*vitr].pt + shift), radius, color, -1);
+	}
+	write_image(name, image);
+}
+
+void findNoOfComponents(const Graph& graph, const int& vertexCount, double& scaleGraph, Point2d& shiftGraph) {
+    cout << endl << "This is the scale and shift for the components "<< scaleGraph << " " << shiftGraph << endl; 
     vector<int> component(num_vertices(graph)); int c;
-    Mat componentImage = Mat::zeros(600, 600, CV_8UC3); componentImage = cv::Scalar(255, 255, 255);
+    Mat componentImage = Mat::zeros(2400, 2400, CV_8UC3); componentImage = cv::Scalar(255, 255, 255);
     double scaleComponentGraph; Point2d shiftComponentGraph;
     int componentCount = connected_components(graph, &component[0]); 
     vector<int> componentArr[componentCount];
@@ -279,28 +303,80 @@ void findNoOfComponents(const Graph& graph, const int& vertexCount) {
     for (i = 0; i != component.size(); ++i)
       cout << "Vertex " << i <<" is in component " << component[i] << endl;
     for (i = 0; i != component.size(); ++i){
-  	c = component[i];
-  	componentArr[c].push_back(i);
+  		c = component[i];
+  		componentArr[c].push_back(i);
     }
-    for(i = 0; i<componentCount;i++){
-	cout<<"In component "<<i<<": ";
-  	for(vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++){
-		cout << *Itr << " ";
-  	}
-  	cout<<endl;
+    for(i = 0; i<componentCount;i++) {
+		cout<<"In component "<<i<<": ";
+  		for(vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++){
+			cout << *Itr << " ";
+  		}
+  		cout<<endl;
     }
+// CHUTIYAPA BEGINS FROM HERE
     cout<<"In the function of components and computing the subgraphs"<<endl;
     cout<<"---------------------------------------------------------"<<endl;
-    vector<int> currentComponent; int vertexOne, vertexTwo; Graph componentsGraph[componentCount];
+    /*int vertexOne, vertexTwo;*/ Graph componentsGraph[componentCount];
 	cout<<"Going to iterate through all the components"<<endl;
-	for(int c = 0; c < componentCount; c++) {
+	int currentComponentCount;
+	for(int c = 0; c < componentCount; c++) { 
+		int i = 0;
+		vector<int> currentComponent(componentArr[c]);
+		currentComponentCount = currentComponent.size();
+		Graph currentComponentGraph(currentComponentCount);
+		cout << endl << "The current component is: " << c << "which has the size of : " << currentComponentCount << endl;
+		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end() && (i < currentComponentCount); it++) {
+			currentComponentGraph[i].pt.x = graph[*it].pt.x;
+			currentComponentGraph[i].pt.y = graph[*it].pt.y;
+			i++;
+		}
+		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end(); it++) {
+		//for(vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end(); it++) { 
+			for(vector<int>::iterator jt = currentComponent.begin(); jt != currentComponent.end(); jt++) { 
+				if( *it == *jt)
+					continue;
+				Graph::vertex_descriptor v0, v1;
+				v0 = *it;
+				v1 = *jt;
+				cout<<"These are the vertices in the random graph: " << v0 <<" " << v1 << endl;
+				if(edge(v0, v1, graph).second) {
+					add_edge(v0, v1, currentComponentGraph);
+					cout<<"An edge has been added in the subgraph as well between:" << v0 << " and " << v1 << endl;
+				}
+			}
+		}
+
+		if(c == 0){ 
+			cout<<endl<<"255 0 0 will be used to plot this component"<<endl;
+			Draw_Graph(currentComponentGraph,4, CV_RGB(255, 0, 0), componentImage, scaleGraph, shiftGraph, "componentsGraph.png");
+		}
+		if(c > 0 && c < 3){
+			cout<<endl<<"0 255 0 will be used to plot this component"<<endl;
+			Draw_Graph(currentComponentGraph,4, CV_RGB(0, 255, 0), componentImage, scaleGraph, shiftGraph, "componentsGraph.png");
+		}
+		if(c >= 3 && c < 6){
+			cout<<endl<<"100 100 100 will be used to plot this component"<<endl;
+			Draw_Graph(currentComponentGraph,4, CV_RGB(100, 100, 100), componentImage, scaleGraph, shiftGraph, "componentsGraph.png");
+		}
+		if(c >= 6 && c < 8) {
+			cout<<endl<<"200 200 200 will be used to plot this component"<<endl;
+			Draw_Graph(currentComponentGraph,4, CV_RGB(200, 100, 100), componentImage, scaleGraph, shiftGraph, "componentsGraph.png");
+		}
+		if(c >= 8){
+			Draw_Graph(currentComponentGraph,4, CV_RGB(0, 255, 255), componentImage, scaleGraph, shiftGraph, "componentsGraph.png");
+		}
+	}
+}
+
+	/*for(int c = 0; c < componentCount; c++) {
 		int size, i; i = 0;
 		cout<<"Currently in the component "<< c << endl;
-		currentComponent = componentArr[c]; size = currentComponent.size();
-		cout<<"This is the size of the current component: "<<size<<endl;
+		vector<int> currentComponent(componentArr[c]);
+		size = currentComponent.size();
+		cout << "This is the size of the current component: " << size << endl;
 		Graph componentGraph(size);
-		cout<<"Current component vector has copied the current component under iteration"<<endl;
-		cout<<"Now, we are adding the vertex attributes for all this particular component." << endl;
+		cout << "Current component vector has copied the current component under iteration" << endl;
+		cout << "Now, we are adding the vertex attributes for all this particular component." << endl;
 		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end() && (i < size); ++it) {
 			cout<<"This is the value of it"<<(*it)<<endl;
 			componentGraph[i].pt.x = graph[*it].pt.x;
@@ -310,30 +386,32 @@ void findNoOfComponents(const Graph& graph, const int& vertexCount) {
 		}
 		cout << "Now, we are adding edges in the subgraph, i.e. the current component." << endl;
 		for(std::vector<int>::iterator it = currentComponent.begin(); it != currentComponent.end(); ++it) {
-			for(std::vector<int>::iterator jt = it+1; jt != currentComponent.end(); ++jt) {
+			for(std::vector<int>::iterator jt = it; jt != currentComponent.end(); ++jt) {
+				if(it == jt){
+					continue;
+				}
 				cout<<"The values of it and jt are:" << *it << " " << *jt << endl;
-				vertexOne = currentComponent[*it]; vertexTwo = currentComponent[*jt];
+				
+				if(!((vertexOne < num_vertices(graph)) && (vertexOne < 0))) {
+					cout << endl <<"Vertex one is: " << vertexOne << " with the value of: " << vertexOne << " and is not in the random graph but somehow in the current component. " << endl;
+
+				}
+				if(!((vertexTwo < num_vertices(graph)) && (vertexTwo < 0))) {
+					cout << endl <<"Vertex two is: " << vertexTwo << " with the value of: " << vertexTwo << " and is not in the random graph but somehow in the current component. " << endl;
+				}
+
+				if(currentComponent[*it] && currentComponent[*jt]) {
+					vertexOne = currentComponent[*it]; vertexTwo = currentComponent[*jt];
+					cout<<endl<<"Vertices achieved"<<vertexOne<<" "<<vertexTwo<<endl;
+				}
+				
 				if(edge(vertexOne, vertexTwo, graph).second) {
 					add_edge(vertexOne, vertexTwo, componentGraph);
 					cout<<"An edge has been added in the subgraph as well between:" << vertexOne << " and " << vertexTwo << endl;
 				}
 			}
-		}
-		if(c == 0){ 
-			Draw_Graph(componentGraph,4, CV_RGB(255, 0, 0), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
-		}
-		if(c > 0 && c < 3){
-			Draw_Graph(componentGraph,4, CV_RGB(155, 50, 50), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
-		}
-		if(c >= 3 && c < 6){
-			Draw_Graph(componentGraph,4, CV_RGB(125, 65, 65), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
-		}
-		if(c >= 6 && c < 8) {
-			Draw_Graph(componentGraph,4, CV_RGB(100, 85, 70), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
-		}
-		if(c >= 8){
-			Draw_Graph(componentGraph,4, CV_RGB(0, 50, 150), componentImage, scaleComponentGraph, shiftComponentGraph, "componentsGraph.png");
-		}
+		}*/
+		
 		
 
 		/*
@@ -351,8 +429,7 @@ void findNoOfComponents(const Graph& graph, const int& vertexCount) {
 				}
 			}
 		}*/
-	}
-}
+
 
 /*
 void drawComponents(const Graph& graph, const int& componentCount, const int& vertexCount) {
@@ -396,5 +473,8 @@ int main() {
 	double threshold; cin >> threshold;
 	neighbourHoodGraph(randomGraph, threshold);
 	Draw_Graph(randomGraph, 4, CV_RGB(255, 0, 0), cloudImage, scaleGraph, shiftGraph, "scaledRandomCloudGraph.png");
-	findNoOfComponents(randomGraph, randomCloudSize);
+	cout<<endl<<"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"<<endl;
+	cout<<endl<<"This is the scale and shift sent after comuting the random graph!"<<endl;
+	cout<<endl<<scaleGraph<<" "<<shiftGraph<<endl;
+	findNoOfComponents(randomGraph, randomCloudSize, scaleGraph, shiftGraph);
 }
