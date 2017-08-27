@@ -306,18 +306,37 @@ void findNoOfComponents(const Graph& graph, const int& vertexCount, double& scal
   		c = component[i];
   		componentArr[c].push_back(i);
     }
-    for(i = 0; i<componentCount;i++) {
+    /*for(i = 0; i<componentCount;i++) {
 		cout<<"In component "<<i<<": ";
   		for(vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++){
 			cout << *Itr << " ";
   		}
   		cout<<endl;
-    }
+    }*/
+	int j = 0;
+	for (i = 0; i<componentCount; i++) {
+		Graph componentTempGraph(componentArr[i].size());
+		cout << "In component " << i << ": ";
+		for (vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++) {
+			cout << *Itr << " ";
+			cout << " The points are: " << graph[*Itr].pt.x << " and " << graph[*Itr].pt.y;
+			componentTempGraph[j].pt.x = graph[*Itr].pt.x;
+			componentTempGraph[j].pt.x = graph[*Itr].pt.y;
+			j++;
+		}
+		cout << endl;
+		graphArr.push_back(componentTempGraph);
+		componentTempGraph.clear();
+		j = 0;	
+	}
+	/*for (i = 0; i < componentCount; i++) {
+		Draw_Graph(graphArr[i], 4, CV_RGB(255, 0, 0), newCloudImage, scaleGraph, shiftGraph, "scaledRandomCloudGraph.png");
+	}*/
 // CHUTIYAPA BEGINS FROM HERE
-    cout<<"In the function of components and computing the subgraphs"<<endl;
-    cout<<"---------------------------------------------------------"<<endl;
+    //cout<<"In the function of components and computing the subgraphs"<<endl;
+    //cout<<"---------------------------------------------------------"<<endl;
     /*int vertexOne, vertexTwo;*/ Graph componentsGraph[componentCount];
-	cout<<"Going to iterate through all the components"<<endl;
+	/*cout<<"Going to iterate through all the components"<<endl;
 	int currentComponentCount;
 	for(int c = 0; c < componentCount; c++) { 
 		int i = 0;
@@ -365,7 +384,7 @@ void findNoOfComponents(const Graph& graph, const int& vertexCount, double& scal
 		if(c >= 8){
 			Draw_Graph(currentComponentGraph,4, CV_RGB(0, 255, 255), componentImage, scaleGraph, shiftGraph, "componentsGraph.png");
 		}
-	}
+	}*/
 }
 
 	/*for(int c = 0; c < componentCount; c++) {
