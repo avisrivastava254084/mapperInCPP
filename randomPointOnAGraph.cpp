@@ -290,10 +290,10 @@ void Draw_Component(Graph const& component, int radius, Scalar color, Mat& image
 	write_image(name, image);
 }
 
-void findNoOfComponents(const Graph& graph, const int& vertexCount, double& scaleGraph, Point2d& shiftGraph) {
+void findNoOfComponents(const Graph& graph, const int& vertexCount, double& scaleGraph, Point2d& shiftGraph, vector<Graph>& graphArr, Mat& newCloudImage, double threshold){
     cout << endl << "This is the scale and shift for the components "<< scaleGraph << " " << shiftGraph << endl; 
     vector<int> component(num_vertices(graph)); int c;
-    Mat componentImage = Mat::zeros(2400, 2400, CV_8UC3); componentImage = cv::Scalar(255, 255, 255);
+    //Mat componentImage = Mat::zeros(2400, 2400, CV_8UC3); componentImage = cv::Scalar(255, 255, 255);
     double scaleComponentGraph; Point2d shiftComponentGraph;
     int componentCount = connected_components(graph, &component[0]); 
     vector<int> componentArr[componentCount];
@@ -314,19 +314,27 @@ void findNoOfComponents(const Graph& graph, const int& vertexCount, double& scal
   		cout<<endl;
     }*/
 	int j = 0;
+	int p = 0; int q = 0; int r = 0;
 	for (i = 0; i<componentCount; i++) {
+
 		Graph componentTempGraph(componentArr[i].size());
 		cout << "In component " << i << ": ";
 		for (vector<int>::iterator Itr = componentArr[i].begin(); Itr != componentArr[i].end(); Itr++) {
-			cout << *Itr << " ";
+			cout << " " << *Itr << " ";
 			cout << " The points are: " << graph[*Itr].pt.x << " and " << graph[*Itr].pt.y;
 			componentTempGraph[j].pt.x = graph[*Itr].pt.x;
-			componentTempGraph[j].pt.x = graph[*Itr].pt.y;
+			componentTempGraph[j].pt.y = graph[*Itr].pt.y;
+			//Point centre = Point(componentTempGraph[j].pt);
+			//circle(newCloudImage, centre, 1, CV_RGB(p, q, r), 6);
 			j++;
 		}
+		neighbourHoodGraph(componentTempGraph, threshold);
 		cout << endl;
 		graphArr.push_back(componentTempGraph);
+		Scalar color = CV_RGB(p, q, r);
+		Draw_Component(componentTempGraph, 4, color, newCloudImage, scaleGraph, shiftGraph,"newScaledRandomCloudGraph.png");
 		componentTempGraph.clear();
+		p += 50;
 		j = 0;	
 	}
 	/*for (i = 0; i < componentCount; i++) {
@@ -481,6 +489,7 @@ int main() {
 	Graph graph(numberOfVertices);
 	VectorPoint2d RandomPoints;
 	Mat cloudImage = Mat::zeros(600, 600, CV_8UC3); cloudImage = cv::Scalar(255, 255, 255);
+	Mat newCloudImage = Mat::zeros(600, 600, CV_8UC3); cloudImage = cv::Scalar(255, 255, 255);
 	Mat graphImage = Mat::zeros(600, 600, CV_8UC3); graphImage = cv::Scalar(255, 255, 255);
 	int randomCloudSize; cout << endl << "Please enter the size of the random cloud that you want to generate" << endl; cin >> randomCloudSize;
 	Graph randomGraph(randomCloudSize);
@@ -491,9 +500,11 @@ int main() {
 	cout << endl << "Please enter the threshold:" << endl;
 	double threshold; cin >> threshold;
 	neighbourHoodGraph(randomGraph, threshold);
+	vector<Graph> graphArr;
 	Draw_Graph(randomGraph, 4, CV_RGB(255, 0, 0), cloudImage, scaleGraph, shiftGraph, "scaledRandomCloudGraph.png");
 	cout<<endl<<"$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$"<<endl;
 	cout<<endl<<"This is the scale and shift sent after comuting the random graph!"<<endl;
 	cout<<endl<<scaleGraph<<" "<<shiftGraph<<endl;
-	findNoOfComponents(randomGraph, randomCloudSize, scaleGraph, shiftGraph);
+	findNoOfComponents(randomGraph, randomCloudSize, scaleGraph, shiftGraph, graphArr, newCloudImage, threshold);
+	//findNoOfComponents(randomGraph, randomCloudSize, scaleGraph, shiftGraph);
 }
