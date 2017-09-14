@@ -90,83 +90,74 @@ void readPoints(vector<dataPoint>& points) {
   }
   // cout<<"Size of the vector:"<<points.size()<<endl;
 }
+
 bool sortByGauss(const pair<double, Point2d>& a,
                  const pair<double, Point2d>& b) {
   return (a.first < b.first);
-}
-void colormap(std::vector<dataPoint>& points,
-              double scalingFactor,
-              int imageSize) {
-  dataPoint myPoint;
-  double lBound, rBound, t, R, G, B;
-  long i = 0;
-  Vec3b clBound, crBound, computed_color;
-  Point2d center;
-  Mat fdpImage = Mat::zeros(imageSize, imageSize, CV_8UC3);
-  fdpImage = cv::Scalar(255, 255, 255);
-  vector<Vec3b> colormap;
-  colormap.push_back(Vec3b(255, 0, 0));
-  colormap.push_back(Vec3b(0, 255, 0));
-  colormap.push_back(Vec3b(0, 255, 255));
-  colormap.push_back(Vec3b(0, 0, 255));
-  int pointssize = points.size();
-  int colorsize = colormap.size() - 1;
-  float fit = (float)pointssize / (float)colorsize;
-  int ffit = ceil((float)fit);
-  vector<pair<double, Point2d> > fdp;
-  for (vector<dataPoint>::iterator it = points.begin(); it != points.end();
-       it++) {
-    dataPoint copyPoint = *it;
-    fdp.push_back(make_pair(copyPoint.GaussDensity, copyPoint.pt));
-  }
-  sort(fdp.begin(), fdp.end(), sortByGauss);
-  cout << "Testing whether the sorting works" << endl;
-  int iAvi = 0;
-  for (vector<dataPoint>::iterator it = points.begin(); it != points.end();
-       it++) {
-    cout << fdp[iAvi].first << " " << endl;
-    cout << "x " << fdp[iAvi].second.x << "y " << fdp[iAvi].second.y << endl;
-    iAvi++;
-  }
-  // std::sort(points.begin(), points.end());
-  for (vector<pair<double, Point2d> >::iterator it = fdp.begin();
-       it != fdp.end(); it++) {
-    pair<double, Point2d> myPoint = *it;
-    if (i % ffit == 0) {
-      lBound = fdp[i].first;
-      //  cout<< lBound <<endl;
-      if ((i + ffit) < points.size()) {
-        rBound = fdp[(i + (ffit - 1))].first;
-      } else {
-        rBound = fdp[(points.size() - 1)].first;
-      }
-    }
-    cout << lBound << " to " << rBound << endl;
-    if (rBound - lBound != 0) {
-      t = (fdp[i].first - lBound) / (rBound - lBound);
-    } else {
-      t = 0;
-    }
-    if (i % ffit == 0) {
-      clBound = colormap[i / ffit];
-      if (((i / ffit) + 1) < colormap.size()) {
-        crBound = colormap[((i / ffit) + 1)];
-      } else {
-        crBound = colormap[(colormap.size() - 1)];
-      }
-    }
-    cout << "t " << t << endl;
-    computed_color = (((1 - t) * clBound) + (t * crBound));
-    cout << computed_color << endl;
-    cout << "R G B " << R << " " << G << " " << B << endl;
-    center = Point((scalingFactor * myPoint.second.x),
-                   (scalingFactor * myPoint.second.y));
-    circle(fdpImage, center, 2, Scalar(computed_color), 2);
-    i++;
-    String coloredCloud = "fdptestcoloredCloud";
-    write_image(coloredCloud + ".png", fdpImage);
-  }
-}
+
+
+void colormap(std::vector<dataPoint>& points, double scalingFactor, int imageSize)
+{
+    dataPoint myPoint;
+    double lBound,rBound,t,R,G,B;
+    long iter_var=0;
+    Vec3b color_lBound,color_rBound,computed_color;
+    Point2d center;
+    Mat coloredimage = Mat::zeros(imageSize, imageSize, CV_8UC3);
+	coloredimage = cv::Scalar(255,255,255);
+    vector<Vec3b> colormap;
+    colormap.push_back(Vec3b(255,0,0)); //blue
+    colormap.push_back(Vec3b(0,255,0)); //green
+    colormap.push_back(Vec3b(0,255,255));//yellow
+    colormap.push_back(Vec3b(0,0,255));//red
+    int pointssize=points.size();
+    int colorsize=colormap.size()-1;
+    float fit=(float)pointssize/(float)colorsize;
+    int corrected_fit=ceil((float)fit);
+    vector< pair<double, Point2d> > copyvec;
+    for(vector<dataPoint>::iterator it=points.begin(); it!= points.end(); it++) {
+		dataPoint copyPoint = *it;
+		copyvec.push_back( make_pair(copyPoint.GaussDensity, copyPoint.pt));
+	}
+	sort(copyvec.begin(), copyvec.end(), sortByGauss);
+	cout<<"Testing whether the sorting works"<<endl;
+	int copy_var = 0;
+	for(vector<dataPoint>::iterator it=points.begin(); it!= points.end(); it++) {
+	cout<<copyvec[copy_var].first<<" "<<endl;
+	cout<<"x "<<copyvec[copy_var].second.x<<"y "<<copyvec[copy_var].second.y<<endl;
+		copy_var++;
+	}
+    //std::sort(points.begin(), points.end());
+    for(vector< pair<double, Point2d> >::iterator it=copyvec.begin(); it!= copyvec.end(); it++) {
+       pair<double, Point2d> myPoint= *it;
+        if(iter_var%corrected_fit==0) {
+            lBound=copyvec[iter_var].first;
+        //  cout<< lBound <<endl;
+                if((iter_var+corrected_fit)<points.size()) {
+                rBound=copyvec[(iter_var+(corrected_fit-1))].first; }
+            else { rBound=copyvec[(points.size()-1)].first; }
+        }
+            cout<<lBound<<" to "<<rBound<<endl;
+            if(rBound-lBound!=0) {
+			t=(copyvec[iter_var].first-lBound)/(rBound-lBound);
+             }
+			else { cout<<"Couldn't be calculated for this one"; t=0;  }
+                     if(iter_var%corrected_fit==0) {
+            color_lBound=colormap[iter_var/corrected_fit];
+             if(((iter_var/corrected_fit)+1)<colormap.size()) {
+                 color_rBound=colormap[((iter_var/corrected_fit)+1)]; }
+             else { color_rBound=colormap[(colormap.size()-1)]; } }
+            cout<<"t "<<t<<endl;
+		    computed_color=(((1-t)*color_lBound)+(t*color_rBound));
+            cout<<computed_color<<endl;
+            cout<<"R G B "<<R<<" "<<G<<" "<<B<<endl;
+            center=Point((scalingFactor*myPoint.second.x),(scalingFactor*myPoint.second.y));
+            circle(coloredimage, center, 2, Scalar(computed_color), 2); 
+            iter_var++;
+		        String coloredCloud = "Colored Cloud";
+                write_image(coloredCloud+".png", coloredimage);
+              }
+
 
 void drawingCloud(float scalingFactor,
                   vector<dataPoint> copyPoints,
@@ -181,7 +172,7 @@ void drawingCloud(float scalingFactor,
     currentVector.pt.x *= scalingFactor;
     currentVector.pt.y *= scalingFactor;
     cout << currentVector.pt.x << " " << currentVector.pt.y << endl;
-    ;
+    
     centre = Point(currentVector.pt.x, currentVector.pt.y);
     circle(mapperImage, centre, 1, CV_RGB(255, 0, 0), 3);
   }
