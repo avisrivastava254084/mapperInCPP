@@ -8,6 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <math.h>
 #include <random>
+#include <string> 
 
 using namespace std;
 using namespace cv;
@@ -37,6 +38,11 @@ void write_image(String const& name, Mat const& mapperImage) {
   } catch (std::runtime_error& ex) {
     fprintf(stderr, "Error in writing the image\n", ex.what());
   }
+}
+
+float euclideanDist(Point2d& p, Point2d& q) {
+    Point diff = p - q;
+    return cv::sqrt(diff.x*diff.x + diff.y*diff.y);
 }
 
 int RandEdgeNumber() {
@@ -98,6 +104,13 @@ void Bounding_Box (Graph const& cloud, std::pair<Point2d, Point2d>& cloud_box ) 
 	}
 }
 
+Point2d midpoint(Point2d& a,Point2d& b) {
+    Point2d ret;
+    ret.x = (a.x + b.x) * 0.5;
+    ret.y = (a.y + b.y) * 0.5;
+    return ret;
+}
+
 void Scaling_Parameters (Graph const& cloud, Point image_sizes, double& scale, Point2d& shift) {
 	std::pair<Point2d, Point2d> box;
 	Bounding_Box( cloud, box );
@@ -111,21 +124,48 @@ void Scaling_Parameters (Graph const& cloud, Point image_sizes, double& scale, P
 }
 
 // Draw a scaled cloud to the image of a given size
-void Draw_Cloud (Graph const& cloud, int radius, Scalar color, Mat& image, double& scale, Point2d& shift) {
+void Draw_Cloud (Graph const& cloud, int radius, Scalar color, Mat& image, double& scale, Point2d& shift,int n,int m) {
 	Scaling_Parameters( cloud, image.size(), scale, shift );
 	VItr vitr, vend;
+	double major_axis;
 	boost:tie(vitr, vend) = boost::vertices(cloud);
-	VertexDescriptor u,v; EdgePair ep; Point2d vertexOne, vertexTwo;
+	VertexDescriptor u,v; EdgePair ep; Point2d vertexOne, vertexTwo ,center_point_prev,center_point_new,end_points[4];
 	for(ep = edges(cloud); ep.first != ep.second; ++ep.first) {
 		u = source(*ep.first, cloud); vertexOne = cloud[u].pt;
 		v = target(*ep.first, cloud); vertexTwo = cloud[v].pt;
-		vertexOne *= scale; vertexOne + shift;
-		vertexTwo *= scale; vertexTwo + shift;
-		line(image, vertexOne, vertexTwo, CV_RGB(0,0,255));
+		vertexOne *= scale;vertexOne + shift;
+		vertexTwo *= scale;vertexTwo + shift;
+		//line(image, vertexOne, vertexTwo, CV_RGB(0,0,255));
 	}
+	int i = 0;
+	int j = 1;
+	int k = 0;
 	for (; vitr != vend; ++vitr) {
-		circle( image, Point( scale * cloud[*vitr].pt + shift ), radius, color, -1 );
+		center_point_new = Point( scale * cloud[*vitr].pt + shift ); 
+		circle( image, center_point_new , radius, color, -1 );
+		if(i != 0)
+		{
+			ellipse(image,midpoint(center_point_prev,center_point_new),Size(euclideanDist(center_point_prev,center_point_new)*0.5,3),90,0,360,CV_RGB(0,0,255),1,8);
+		}
+		i++;
+		if(i == n + 1)
+		{
+			i = 0;
+		}
+		if(j == 1 || j == n + 1 || j == m*(n+1) + 1 || j == (m+1)*(n+1))
+		{
+			end_points[k] = center_point_new;
+			k++;
+		}
+		j++;
+		center_point_prev = center_point_new;
+
+		
 	}
+	line(image,end_points[0],end_points[1],CV_RGB(0,0,255));
+	line(image,end_points[1],end_points[3],CV_RGB(0,0,255));
+	line(image,end_points[0],end_points[2],CV_RGB(0,0,255));
+	line(image,end_points[2],end_points[3],CV_RGB(0,0,255));	
 	write_image("squareGridDouble.png", image);
 }
 
@@ -143,6 +183,6 @@ int main() {
 	mapperImage = cv::Scalar(255,255,255);
 	cout << "Please enter the radius of the vertices' circles." << endl;
 	int radius; cin >> radius;
-	Draw_Cloud(graph, radius, CV_RGB(255,0,0), mapperImage, scale, shift);
+	Draw_Cloud(graph, radius, CV_RGB(255,0,0), mapperImage, scale, shift,size_n,size_m);
 	return 0;
 }
